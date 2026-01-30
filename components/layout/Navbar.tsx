@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Menu, X, Rocket } from "lucide-react";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+
+// Helper for GitHub Pages prefix
+const prefix = process.env.NODE_ENV === 'production' ? '/SinFloW.SaaS' : '';
 import { motion, AnimatePresence } from "framer-motion";
 
 export function Navbar() {
@@ -40,7 +43,7 @@ export function Navbar() {
                     <div className="flex-shrink-0 flex items-center gap-2">
                         <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-white tracking-tighter">
                             <Image
-                                src="/sinflow-logo.png"
+                                src={`${prefix}/sinflow-logo.png`}
                                 alt="Sinflow Logo"
                                 width={32}
                                 height={32}

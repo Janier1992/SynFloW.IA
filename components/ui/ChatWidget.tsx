@@ -157,16 +157,16 @@ export function ChatWidget() {
                                     >
                                         <div
                                             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-sinflow-border/50 ${msg.role === "user"
-                                                    ? "bg-sinflow-secondary/20 text-sinflow-secondary"
-                                                    : "bg-sinflow-bg-light/50 text-sinflow-text-dim"
+                                                ? "bg-sinflow-secondary/20 text-sinflow-secondary"
+                                                : "bg-gray-800 text-gray-400"
                                                 }`}
                                         >
                                             {msg.role === "user" ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4" />}
                                         </div>
                                         <div
                                             className={`rounded-2xl px-4 py-2.5 text-sm shadow-sm ${msg.role === "user"
-                                                    ? "bg-sinflow-secondary text-white rounded-tr-none"
-                                                    : "bg-sinflow-bg-light border border-sinflow-border/50 text-sinflow-text-light rounded-tl-none"
+                                                ? "bg-sinflow-secondary text-white rounded-tr-none"
+                                                : "bg-gray-800 border border-gray-700 text-gray-100 rounded-tl-none"
                                                 }`}
                                         >
                                             {msg.content}
@@ -176,7 +176,7 @@ export function ChatWidget() {
                             ))}
                             {isLoading && (
                                 <div className="flex justify-start">
-                                    <div className="flex items-center gap-2 rounded-2xl bg-sinflow-bg-light px-4 py-3 border border-sinflow-border/50 rounded-tl-none">
+                                    <div className="flex items-center gap-2 rounded-2xl bg-gray-800 px-4 py-3 border border-gray-700 rounded-tl-none">
                                         <Loader2 className="h-4 w-4 animate-spin text-sinflow-secondary" />
                                         <span className="text-xs text-sinflow-text-dim">Escribiendo...</span>
                                     </div>
