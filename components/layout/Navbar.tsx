@@ -49,7 +49,7 @@ export function Navbar() {
                                 height={32}
                                 className="w-8 h-8 object-contain"
                             />
-                            <span>Sinflow</span>
+                            <span>SynFlow</span>
                         </Link>
                     </div>
 

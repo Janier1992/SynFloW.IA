@@ -19,7 +19,7 @@ export function Footer() {
                                 height={32}
                                 className="w-8 h-8 object-contain"
                             />
-                            <span className="text-2xl font-bold text-white tracking-tighter">Sinflow</span>
+                            <span className="text-2xl font-bold text-white tracking-tighter">SynFlow</span>
                         </Link>
                         <p className="text-sm mb-6">
                             Transformamos empresas mediante inteligencia artificial, datos y automatización avanzada.
