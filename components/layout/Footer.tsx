@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Rocket, Github, Linkedin, Twitter, Mail, MapPin } from "lucide-react";
 import Image from "next/image";
 
+// Helper for GitHub Pages prefix
+const prefix = process.env.NODE_ENV === 'production' ? '/SinFloW.SaaS' : '';
+
 export function Footer() {
     return (
         <footer className="bg-sinflow-primary border-t border-gray-800 text-gray-400">
@@ -10,7 +13,7 @@ export function Footer() {
                     <div className="col-span-1 md:col-span-1">
                         <Link href="/" className="flex items-center gap-2 mb-4">
                             <Image
-                                src="/sinflow-logo.png"
+                                src={`${prefix}/sinflow-logo.jpg`}
                                 alt="Sinflow Logo"
                                 width={32}
                                 height={32}
