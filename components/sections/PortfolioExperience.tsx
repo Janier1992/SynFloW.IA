@@ -77,7 +77,7 @@ export function PortfolioExperience() {
                         transition={{ delay: 0.1 }}
                         className="text-xl text-gray-400 max-w-2xl mx-auto"
                     >
-                        Explora nuestras soluciones reales, escanea el QR y vive la experiencia Sinflow desde adentro. Ideas que ya están vivas.
+                        Explora nuestras soluciones reales, escanea el QR y vive la experiencia SynFlow desde adentro. Ideas que ya están vivas.
                     </motion.p>
                 </div>
 

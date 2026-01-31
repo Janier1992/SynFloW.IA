@@ -14,7 +14,7 @@ export function Footer() {
                         <Link href="/" className="flex items-center gap-2 mb-4">
                             <Image
                                 src={`${prefix}/sinflow-logo.jpg`}
-                                alt="Sinflow Logo"
+                                alt="SynFlow Logo"
                                 width={32}
                                 height={32}
                                 className="w-8 h-8 object-contain"

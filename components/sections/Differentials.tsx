@@ -24,7 +24,7 @@ export function Differentials() {
                             viewport={{ once: true }}
                             className="text-3xl sm:text-4xl font-bold text-white mb-6"
                         >
-                            ¿Por qué elegir Sinflow?
+                            ¿Por qué elegir SynFlow?
                         </motion.h2>
                         <motion.p
                             initial={{ opacity: 0, x: -20 }}

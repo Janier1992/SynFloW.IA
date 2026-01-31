@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sinflow | Agencia de IA y Desarrollo de Software",
-  description: "Transformamos empresas con Inteligencia Artificial, Data y Software a la medida. Innovación desde Medellín para el mundo.",
+  title: "SynFlow SaaS | Inteligencia Artificial y Automatización en Medellín",
+  description: "Transformamos PyMEs en Medellín con Inteligencia Artificial, Automatización de Procesos y Desarrollo de Software a la medida. SynFlow es tu aliado tecnológico.",
 };
 
 export default function RootLayout({
