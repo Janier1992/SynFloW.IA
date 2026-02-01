@@ -1,59 +1,167 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
-import { ArrowRight, MessageSquare } from "lucide-react"; // Using MessageSquare as placeholder for specific chat icon if needed
+import { ArrowRight, Check, Loader2, AlertCircle } from "lucide-react";
+import { submitLead } from "@/actions/submit-lead"; // Adjust path if needed
 
 export function CTA() {
+    const [formState, setFormState] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [errorMessage, setErrorMessage] = useState("");
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        setFormState("loading");
+        const formData = new FormData(e.currentTarget);
+
+        try {
+            const result = await submitLead({ status: "idle", message: "" }, formData);
+            if (result.status === "success") {
+                setFormState("success");
+            } else {
+                setFormState("error");
+                setErrorMessage(result.message);
+            }
+        } catch (error) {
+            setFormState("error");
+            setErrorMessage("Ocurrió un error inesperado. Intenta nuevamente.");
+        }
+    };
+
     return (
         <section id="contacto" className="py-24 relative overflow-hidden">
             <div className="absolute inset-0 bg-sinflow-secondary/5" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-sinflow-accent/10 blur-[120px] rounded-full pointer-events-none" />
 
-            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-                <motion.h2
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    className="text-4xl sm:text-5xl font-bold text-white mb-6"
-                >
-                    Transforma tu empresa con
-                    <span className="block text-sinflow-secondary mt-2">Inteligencia Artificial y datos</span>
-                </motion.h2>
+            {/* Ambient Background */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-sinflow-accent/10 blur-[130px] rounded-full pointer-events-none" />
 
-                <motion.p
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.1 }}
-                    className="text-xl text-gray-400 mb-10"
-                >
-                    Agenda una consulta estratégica gratuita y descubre cómo podemos potenciar tu crecimiento.
-                </motion.p>
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
 
-                <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.2 }}
-                    className="flex flex-col sm:flex-row items-center justify-center gap-4"
-                >
-                    <Link
-                        href="https://wa.me/573000000000" // Placeholder number
-                        target="_blank"
-                        className="w-full sm:w-auto px-8 py-4 bg-sinflow-secondary text-sinflow-primary font-bold rounded-full hover:bg-sinflow-secondary/90 transition-all flex items-center justify-center gap-2 shadow-lg shadow-sinflow-secondary/25"
+                    {/* Left Column: Text */}
+                    <motion.div
+                        initial={{ opacity: 0, x: -30 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        className="text-left"
                     >
-                        <MessageSquare className="w-5 h-5" />
-                        Hablemos ahora
-                    </Link>
-                    <Link
-                        href="mailto:hola@sinflow.co"
-                        className="w-full sm:w-auto px-8 py-4 bg-white/5 text-white font-medium rounded-full border border-white/10 hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+                        <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6 leading-tight">
+                            ¿Listo para <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-sinflow-secondary to-sinflow-accent">
+                                Escalar tu Negocio?
+                            </span>
+                        </h2>
+                        <p className="text-xl text-gray-400 mb-8 max-w-lg">
+                            Descubre cómo podemos ayudarte a que por medio de la inteligencia artificial cuentes con soluciones a la medida para tu negocio y que estas puedan transformar las operaciones desde hoy mismo.
+                        </p>
+
+                        <div className="flex flex-col gap-4 text-gray-300">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-sinflow-secondary/10 flex items-center justify-center text-sinflow-secondary">
+                                    <Check className="w-5 h-5" />
+                                </div>
+                                <span>Consultoría inicial gratuita</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-sinflow-secondary/10 flex items-center justify-center text-sinflow-secondary">
+                                    <Check className="w-5 h-5" />
+                                </div>
+                                <span>Arquitectura escalable y segura</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-sinflow-secondary/10 flex items-center justify-center text-sinflow-secondary">
+                                    <Check className="w-5 h-5" />
+                                </div>
+                                <span>Soporte técnico especializado</span>
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    {/* Right Column: Form */}
+                    <motion.div
+                        initial={{ opacity: 0, x: 30 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.2 }}
+                        className="bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md shadow-2xl"
                     >
-                        Enviar correo
-                        <ArrowRight className="w-5 h-5" />
-                    </Link>
-                </motion.div>
+                        {formState === "success" ? (
+                            <div className="text-center py-12">
+                                <div className="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-6">
+                                    <Check className="w-10 h-10" />
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-2">¡Mensaje Recibido!</h3>
+                                <p className="text-gray-400">Nuestro equipo te contactará en breve.</p>
+                                <button
+                                    onClick={() => setFormState("idle")}
+                                    className="mt-8 text-sinflow-secondary hover:text-white transition-colors text-sm font-medium"
+                                >
+                                    Enviar otro mensaje
+                                </button>
+                            </div>
+                        ) : (
+                            <form onSubmit={handleSubmit} className="space-y-6">
+                                <div>
+                                    <h3 className="text-2xl font-bold text-white mb-2">Solicita más información</h3>
+                                    <p className="text-sm text-gray-400">Completa tus datos y te contactaremos.</p>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <div>
+                                        <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-1.5">Nombre Completo</label>
+                                        <input
+                                            type="text"
+                                            name="name"
+                                            id="name"
+                                            required
+                                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all"
+                                            placeholder="John Doe"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1.5">Correo Electrónico</label>
+                                        <input
+                                            type="email"
+                                            name="email"
+                                            id="email"
+                                            required
+                                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all"
+                                            placeholder="john@empresa.com"
+                                        />
+                                    </div>
+                                </div>
+
+                                {formState === "error" && (
+                                    <div className="flex items-center gap-2 text-red-400 text-sm bg-red-400/10 p-3 rounded-lg">
+                                        <AlertCircle className="w-4 h-4" />
+                                        <span>{errorMessage}</span>
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={formState === "loading"}
+                                    className="w-full py-4 bg-gradient-to-r from-sinflow-secondary to-sinflow-accent text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-sinflow-secondary/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {formState === "loading" ? (
+                                        <>
+                                            <Loader2 className="w-5 h-5 animate-spin" />
+                                            Enviando...
+                                        </>
+                                    ) : (
+                                        <>
+                                            Agendar ahora
+                                            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                                        </>
+                                    )}
+                                </button>
+                                <p className="text-xs text-center text-gray-500 mt-4">
+                                    Al enviar este formulario aceptas nuestra política de privacidad.
+                                </p>
+                            </form>
+                        )}
+                    </motion.div>
+                </div>
             </div>
         </section>
     );

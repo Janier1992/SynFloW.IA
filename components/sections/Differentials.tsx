@@ -61,8 +61,10 @@ export function Differentials() {
                     >
                         <div className="absolute inset-0 bg-gradient-to-br from-sinflow-secondary/20 to-sinflow-accent/20 opacity-50" />
                         <div className="relative text-center p-8">
-                            <span className="text-6xl font-bold text-white block mb-2">+10</span>
-                            <span className="text-xl text-gray-300">Años de experiencia combinada</span>
+                            <span className="text-5xl font-bold text-white block mb-4">Proceso</span>
+                            <span className="text-xl text-gray-300 block max-w-xs mx-auto">
+                                Consolidado para el desarrollo de soluciones tecnológicas
+                            </span>
                             <div className="mt-8 grid grid-cols-2 gap-4">
                                 <div className="p-4 bg-white/5 rounded-xl border border-white/10">
                                     <span className="block text-2xl font-bold text-sinflow-secondary">100%</span>

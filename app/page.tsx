@@ -6,6 +6,7 @@ import { Technologies } from "@/components/sections/Technologies";
 import { PortfolioExperience } from "@/components/sections/PortfolioExperience";
 import { CTA } from "@/components/sections/CTA";
 import { Ecosystem } from "@/components/sections/Ecosystem";
+import { Testimonials } from "@/components/sections/Testimonials";
 
 export default function Home() {
   return (
@@ -16,6 +17,7 @@ export default function Home() {
       <Services />
       <Differentials />
       <Technologies />
+      <Testimonials />
       <PortfolioExperience />
       <CTA />
     </>

@@ -8,66 +8,61 @@ import { ServiceModal } from "@/components/ui/ServiceModal";
 const services = [
     {
         title: "Inteligencia Artificial aplicada al negocio",
-        description: "Transforma tu operativa con agentes autónomos y modelos a medida.",
+        description: "Soluciones de IA integradas en tus procesos para mejorar eficiencia y toma de decisiones.",
         details: [
-            "Chatbots de Atención 24/7",
-            "Agentes Autónomos para Tareas Complejas",
-            "Integración con OpenAI (GPT-4) y Azure AI",
-            "Procesamiento de Lenguaje Natural (NLP)",
-            "Sistemas de Recomendación",
-            "Visión por Computadora"
+            "Chatbots de atención 24/7",
+            "Integración con OpenAI y GPT-4",
+            "Sistemas de recomendación personalizados",
+            "Agentes autónomos para tareas complejas"
         ],
         icon: Bot,
     },
     {
         title: "Automatización inteligente de procesos",
-        description: "Elimina la fricción operativa y tareas repetitivas.",
+        description: "Automatizamos procesos operativos para reducir tiempos, errores y costos.",
         details: [
-            "RPA (Robotic Process Automation)",
-            "Flujos con Power Automate / n8n",
-            "Integración de Sistemas Híbridos",
-            "Orquestación de Procesos de Negocio",
-            "Reducción de Errores Manuales",
-            "Alertas Inteligentes"
+            "Automatización de procesos empresariales",
+            "Integración entre plataformas",
+            "Flujos de trabajo inteligentes",
+            "Optimización operativa continua"
         ],
         icon: Settings,
     },
     {
         title: "Analítica de datos integrada",
-        description: "Convierte datos dispersos en activos estratégicos claros.",
+        description: "Transformamos datos en información confiable mediante arquitecturas escalables.",
         details: [
-            "Ingeniería de Datos (ETL/ELT)",
-            "Data Warehousing Moderno",
-            "Limpieza y Calidad de Datos",
-            "Migración a la Nube",
-            "Arquitectura Escalable",
-            "Gobierno del Dato"
+            "ETL y LT",
+            "Limpieza y calidad de datos",
+            "Arquitectura escalable",
+            "Migración a la nube",
+            "Gobierno del dato"
         ],
         icon: Database,
     },
     {
         title: "Business Intelligence orientado a decisiones",
-        description: "Visualiza el futuro de tu negocio en tiempo real.",
+        description: "Convertimos datos en decisiones estratégicas con visualizaciones claras.",
         details: [
-            "Dashboards Interactivos (Power BI)",
-            "KPIs en Tiempo Real",
-            "Análisis Predictivo de Tendencias",
-            "Reportes Ejecutivos Automatizados",
-            "Data Storytelling",
-            "Toma de Decisiones Basada en Datos"
+            "Dashboards con Power BI",
+            "KPIs en tiempo real",
+            "Análisis predictivo de tendencias",
+            "Data storytelling",
+            "Reportes automatizados",
+            "Soporte a decisiones ejecutivas"
         ],
         icon: BarChart3,
     },
     {
-        title: "Desarrollo de software a la medida",
-        description: "Soluciones robustas para problemas únicos y complejos.",
+        title: "Desarrollo de software a medida",
+        description: "Diseñamos soluciones tecnológicas adaptadas a las necesidades específicas de tu negocio.",
         details: [
-            "Aplicaciones Web Modernas (Next.js)",
-            "Apps Móviles Nativas/Híbridas",
-            "Sistemas Empresariales (ERP/CRM Custom)",
-            "APIs y Microservicios",
-            "Arquitectura Cloud-Native",
-            "Mantenimiento Evolutivo"
+            "Aplicaciones web modernas con Next.js",
+            "Sistemas empresariales",
+            "ERP y CRM personalizados",
+            "Aplicaciones móviles nativas",
+            "APIs y microservicios",
+            "Mantenimiento evolutivo"
         ],
         icon: Code,
     },
