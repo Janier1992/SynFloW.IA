@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight, Check, Loader2, AlertCircle } from "lucide-react";
-import { submitLead } from "@/actions/submit-lead"; // Adjust path if needed
 
 export function CTA() {
     const [formState, setFormState] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -12,16 +11,23 @@ export function CTA() {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setFormState("loading");
-        const formData = new FormData(e.currentTarget);
 
         try {
-            const result = await submitLead({ status: "idle", message: "" }, formData);
-            if (result.status === "success") {
-                setFormState("success");
-            } else {
-                setFormState("error");
-                setErrorMessage(result.message);
-            }
+            const formData = new FormData(e.currentTarget);
+            const name = formData.get("name") as string;
+            const email = formData.get("email") as string;
+
+            // Simular proceso breve
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Construir mensaje de WhatsApp
+            const message = `Hola SynFlow, soy ${name} (${email}). Estoy interesado en escalar mi negocio con IA.`;
+            const whatsappUrl = `https://wa.me/573000000000?text=${encodeURIComponent(message)}`;
+
+            // Abrir WhatsApp
+            window.open(whatsappUrl, '_blank');
+
+            setFormState("success");
         } catch (error) {
             setFormState("error");
             setErrorMessage("Ocurrió un error inesperado. Intenta nuevamente.");
@@ -90,8 +96,8 @@ export function CTA() {
                                 <div className="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-6">
                                     <Check className="w-10 h-10" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-2">¡Mensaje Recibido!</h3>
-                                <p className="text-gray-400">Nuestro equipo te contactará en breve.</p>
+                                <h3 className="text-2xl font-bold text-white mb-2">¡Redirigiendo a WhatsApp!</h3>
+                                <p className="text-gray-400">Si no se abre, revisa tus ventanas emergentes.</p>
                                 <button
                                     onClick={() => setFormState("idle")}
                                     className="mt-8 text-sinflow-secondary hover:text-white transition-colors text-sm font-medium"
@@ -146,7 +152,7 @@ export function CTA() {
                                     {formState === "loading" ? (
                                         <>
                                             <Loader2 className="w-5 h-5 animate-spin" />
-                                            Enviando...
+                                            Redirigiendo...
                                         </>
                                     ) : (
                                         <>
