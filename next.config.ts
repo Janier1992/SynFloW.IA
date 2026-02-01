@@ -1,10 +1,8 @@
 import type { NextConfig } from "next";
 
-const isProd = process.env.NODE_ENV === 'production';
-
 const nextConfig: NextConfig = {
-  output: isProd ? "export" : undefined,
-  basePath: isProd ? "/SinFloW.SaaS" : undefined,
+  // output: "export", // Disabled for Vercel (enables Server Actions)
+  // basePath: "/SinFloW.SaaS", // Disabled for Vercel (deploys to root)
   images: {
     unoptimized: true,
   },
