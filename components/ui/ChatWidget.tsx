@@ -3,42 +3,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, MessageCircle, X, Loader2, Bot, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { chatWithAI } from "@/actions/chat";
 
-// System prompt defining the AI's persona and knowledge (Moved from API route)
-const SYSTEM_INSTRUCTION = `
-Eres el Asistente Virtual de SynFlow, una agencia tecnológica líder en Medellín.
-Tú misión es ayudar a visitantes, emprendedores y empresarios a entender cómo SynFlow puede potenciar sus negocios.
 
-**TU IDENTIDAD:**
-- Nombre: SynFlow AI.
-- Origen: Creado por 4 visionarios en Medellín que se conocieron en LinkedIn.
-- Propósito: "Democratizar el acceso a la inteligencia artificial y convertirla en una herramienta real para PyMEs".
-- Tono: Profesional, innovador, empático y directo. Usas emojis ocasionalmente (🚀, 💡, 🤖).
-
-**TUS SERVICIOS (LO QUE VENDES):**
-1. **Inteligencia Artificial Aplicada**: Chatbots 24/7, Agentes Autónomos, GPT-4, Visión por Computadora.
-2. **Automatización Inteligente**: RPA, Power Automate, reducción de tareas repetitivas.
-3. **Analítica de Datos**: Ingeniería de datos, ETL, Migración a la Nube.
-4. **Business Intelligence (BI)**: Dashboards en Power BI, toma de decisiones basada en datos.
-5. **Desarrollo de Software a Medida**: Apps Web (Next.js), Apps Móviles, Sistemas ERP/CRM.
-
-**TU OBJETIVO EN LA CONVERSACIÓN:**
-1. Responder dudas sobre servicios.
-2. Identificar oportunidades de negocio.
-3. **CRÍTICO**: Si el usuario muestra interés en contratar, cotizar o iniciar un proyecto, DEBES invitarlo a contactar por WhatsApp.
-   - Frase de cierre sugerida para interesados: "¡Me encanta esa idea! Lo mejor es que hables directamente con nuestro equipo para estructurarla. Escríbenos aquí: 👇"
-
-**INFORMACIÓN DE CONTACTO:**
-- Ubicación: Medellín, Antioquia.
-- Email: ded.uno@gmail.com
-- WhatsApp Link: https://wa.me/573000000000?text=Hola,%20quisiera%20construir%20una%20idea%20con%20SynFlow
-
-**REGLAS:**
-- No inventes servicios que no hacemos.
-- Sé conciso. Respuestas cortas y potentes.
-- Si te preguntan quién te desarrolló, di "El equipo de ingeniería de SynFlow".
-`;
 
 export function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
@@ -67,41 +34,27 @@ export function ChatWidget() {
         setIsLoading(true);
 
         try {
-            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
-
-            if (!apiKey) {
-                throw new Error("API Key not configured");
-            }
-
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({
-                model: "gemini-flash-latest", // Update as needed
-                systemInstruction: SYSTEM_INSTRUCTION,
-            });
-
-            // Prepare history: Map local messages to Gemini format
-            // Note: We exclude the very last user message we just added visually, 
-            // because we send it as the prompt.
-            // Also, Gemini history must mimic the exact sequence.
+            // Prepare history for Server Action
             const history = messages.map(msg => ({
-                role: msg.role === "user" ? "user" : "model",
+                role: msg.role === "user" ? "user" as const : "model" as const,
                 parts: [{ text: msg.content }]
             }));
 
-            const chat = model.startChat({
-                history: history,
-            });
+            // Call Server Action
+            const response = await chatWithAI(history, userMessage);
 
-            const result = await chat.sendMessage(userMessage);
-            const response = await result.response;
-            const text = response.text();
+            if (response.error) {
+                throw new Error(response.error);
+            }
 
-            setMessages((prev) => [...prev, { role: "model", content: text }]);
+            if (response.text) {
+                setMessages((prev) => [...prev, { role: "model", content: response.text! }]);
+            }
         } catch (error) {
             console.error("Error:", error);
             setMessages((prev) => [
                 ...prev,
-                { role: "model", content: "Lo siento, tuve un problema al procesar tu solicitud. Por favor intenta de nuevo más tarde." },
+                { role: "model", content: "Lo siento, tuve un problema al conectar con el servidor. Por favor intenta de nuevo." },
             ]);
         } finally {
             setIsLoading(false);
@@ -117,7 +70,7 @@ export function ChatWidget() {
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 20, scale: 0.95 }}
                         transition={{ duration: 0.2 }}
-                        className="mb-4 flex h-[500px] w-[350px] flex-col overflow-hidden rounded-2xl bg-sinflow-bg border border-sinflow-border shadow-2xl sm:w-[380px]"
+                        className="mb-4 flex h-[500px] w-[350px] flex-col overflow-hidden rounded-2xl bg-gray-900 border border-sinflow-border shadow-2xl sm:w-[380px]"
                     >
                         {/* Header */}
                         <div className="flex items-center justify-between bg-sinflow-secondary/10 px-4 py-3 border-b border-sinflow-border/50">
@@ -193,7 +146,7 @@ export function ChatWidget() {
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     placeholder="Escribe tu mensaje..."
-                                    className="w-full rounded-xl bg-sinflow-bg-light border border-sinflow-border py-3 pl-4 pr-12 text-sm text-sinflow-text-light placeholder:text-sinflow-text-dim focus:border-sinflow-secondary focus:outline-none focus:ring-1 focus:ring-sinflow-secondary/50 transition-all"
+                                    className="w-full rounded-xl bg-gray-900 border border-sinflow-border py-3 pl-4 pr-12 text-sm text-white placeholder:text-gray-400 focus:border-sinflow-secondary focus:outline-none focus:ring-1 focus:ring-sinflow-secondary/50 transition-all"
                                 />
                                 <button
                                     type="submit"
