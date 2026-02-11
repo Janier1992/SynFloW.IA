@@ -22,7 +22,7 @@ export function CTA() {
 
             // Construir mensaje de WhatsApp
             const message = `Hola SynFlow, soy ${name}. Me gustaría recibir consultoría sobre Inteligencia Artificial y Automatización para mi negocio (${email}).`;
-            const whatsappUrl = `https://wa.me/573005051518?text=${encodeURIComponent(message)}`;
+            const whatsappUrl = `https://wa.me/573044769593?text=${encodeURIComponent(message)}`;
 
             // Abrir WhatsApp
             window.open(whatsappUrl, '_blank');
