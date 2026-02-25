@@ -29,7 +29,7 @@ Tú misión es ayudar a visitantes, emprendedores y empresarios a entender cómo
 
 **INFORMACIÓN DE CONTACTO:**
 - Ubicación: Medellín, Antioquia.
-- Email: sinflow.sas.dev@gmail.com
+- Email: synflow.ia@gmail.com
 - WhatsApp Link: https://wa.me/573044769593?text=Hola,%20quisiera%20construir%20una%20idea%20con%20SinFlow%20IA
 
 **REGLAS:**

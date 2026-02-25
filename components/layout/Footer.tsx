@@ -181,7 +181,7 @@ export function Footer() {
                             </li>
                             <li className="flex items-center gap-3">
                                 <Mail className="h-5 w-5 text-sinflow-secondary shrink-0" />
-                                <a href="mailto:sinflow.sas.dev@gmail.com" className="hover:text-white transition-colors">sinflow.sas.dev@gmail.com</a>
+                                <a href="mailto:synflow.ia@gmail.com" className="hover:text-white transition-colors">synflow.ia@gmail.com</a>
                             </li>
                             <li className="flex items-start gap-3">
                                 <MapPin className="h-5 w-5 text-sinflow-secondary shrink-0 mt-0.5" />
