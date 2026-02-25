@@ -65,7 +65,7 @@ export function ChatWidget() {
         setIsLoading(true);
 
         try {
-            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY || "AIzaSyAmGESviqSJm8Zo8--n2odh-XuXBz_EKd0";
 
             if (!apiKey) {
                 // Warning logic for local vs prod mismatches could go here
