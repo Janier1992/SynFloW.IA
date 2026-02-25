@@ -143,7 +143,7 @@ export function Footer() {
                             Transformamos empresas mediante inteligencia artificial, datos y automatización avanzada.
                         </p>
                         <div className="flex space-x-4">
-                            <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="hover:text-sinflow-secondary transition-colors">
+                            <a href="https://www.linkedin.com/in/wbeimar-hernández-hernández-004686155" target="_blank" rel="noopener noreferrer" className="hover:text-sinflow-secondary transition-colors">
                                 <span className="sr-only">LinkedIn</span>
                                 <Linkedin className="h-6 w-6" />
                             </a>
