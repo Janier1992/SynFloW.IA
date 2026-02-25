@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, MessageCircle, X, Loader2, Bot, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const SYSTEM_INSTRUCTION = `
 Eres el Asistente Virtual de SynFlow IA, una agencia tecnológica líder en Medellín.
@@ -66,33 +65,41 @@ export function ChatWidget() {
         setIsLoading(true);
 
         try {
-            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
+            const body = {
+                messages: [
+                    ...messages.slice(1), // Exclude the initial greeting
+                    { role: "user", content: userMessage }
+                ],
+                systemInstruction: SYSTEM_INSTRUCTION
+            };
 
-            if (!apiKey) {
-                throw new Error("Missing NEXT_PUBLIC_GOOGLE_API_KEY");
-            }
-
-            const genAI = new GoogleGenerativeAI(apiKey);
-            const model = genAI.getGenerativeModel({
-                model: "gemini-flash-latest",
-                systemInstruction: SYSTEM_INSTRUCTION,
+            const response = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(body)
             });
 
-            const history = messages.slice(1).map(msg => ({
-                role: msg.role === "user" ? "user" : "model",
-                parts: [{ text: msg.content }]
-            }));
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || `Error HTTP ${response.status}`);
+            }
 
-            const chat = model.startChat({ history });
+            if (!response.body) {
+                throw new Error("No response body from server");
+            }
 
             // Add placeholder message for the AI response
             setMessages((prev) => [...prev, { role: "model", content: "" }]);
 
-            const result = await chat.sendMessageStream(userMessage);
-
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder("utf-8");
             let fullText = "";
-            for await (const chunk of result.stream) {
-                const chunkText = chunk.text();
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunkText = decoder.decode(value, { stream: true });
                 fullText += chunkText;
 
                 // Update the last message with the new chunk
