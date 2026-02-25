@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, MessageCircle, X, Loader2, Bot, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const SYSTEM_INSTRUCTION = `
 Eres el Asistente Virtual de SynFlow IA, una agencia tecnológica líder en Medellín.
@@ -68,46 +69,38 @@ export function ChatWidget() {
             const apiKey = process.env.NEXT_PUBLIC_GOOGLE_API_KEY;
 
             if (!apiKey) {
-                // Warning logic for local vs prod mismatches could go here
                 throw new Error("Missing NEXT_PUBLIC_GOOGLE_API_KEY");
             }
 
-            const model = "gemini-flash-latest";
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({
+                model: "gemini-1.5-flash",
+                systemInstruction: SYSTEM_INSTRUCTION,
+            });
 
-            const history = messages.map(msg => ({
-                role: msg.role === "user" ? "user" as const : "model" as const,
+            const history = messages.slice(1).map(msg => ({
+                role: msg.role === "user" ? "user" : "model",
                 parts: [{ text: msg.content }]
             }));
 
-            const body = {
-                contents: [
-                    ...history,
-                    { role: "user", parts: [{ text: userMessage }] }
-                ],
-                system_instruction: {
-                    parts: [{ text: SYSTEM_INSTRUCTION }]
-                }
-            };
+            const chat = model.startChat({ history });
 
-            const response = await fetch(url, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(body)
-            });
+            // Add placeholder message for the AI response
+            setMessages((prev) => [...prev, { role: "model", content: "" }]);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`API Error ${response.status}: ${errorText.substring(0, 100)}...`);
-            }
+            const result = await chat.sendMessageStream(userMessage);
 
-            const data = await response.json();
-            const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            let fullText = "";
+            for await (const chunk of result.stream) {
+                const chunkText = chunk.text();
+                fullText += chunkText;
 
-            if (text) {
-                setMessages((prev) => [...prev, { role: "model", content: text }]);
-            } else {
-                throw new Error("No response content from AI.");
+                // Update the last message with the new chunk
+                setMessages((prev) => {
+                    const newMessages = [...prev];
+                    newMessages[newMessages.length - 1].content = fullText;
+                    return newMessages;
+                });
             }
 
         } catch (error: any) {
