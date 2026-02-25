@@ -12,7 +12,7 @@ const portfolioItems = [
         type: "SaaS AI Platform",
         stack: ["Next.js", "Python", "AWS", "Gemini"],
         status: "LIVE",
-        url: "https://jhmosquera38-dev.github.io/Fitness-ProIA/",
+        url: "https://fitness-pro-ia.vercel.app/",
         icon: Activity,
         color: "from-orange-500 to-rose-600"
     },
@@ -57,7 +57,7 @@ export function PortfolioExperience() {
                         viewport={{ once: true }}
                         className="inline-block mb-4 px-4 py-1.5 rounded-full border border-sinflow-accent/30 bg-sinflow-accent/10 text-sinflow-accent text-sm font-semibold tracking-wide uppercase"
                     >
-                        🔥 Sinflow Lab
+                        🔥 SinFlow IA Lab
                     </motion.div>
                     <motion.h2
                         initial={{ opacity: 0, y: 20 }}
@@ -77,7 +77,7 @@ export function PortfolioExperience() {
                         transition={{ delay: 0.1 }}
                         className="text-xl text-gray-400 max-w-2xl mx-auto"
                     >
-                        Explora nuestras soluciones reales, escanea el QR y vive la experiencia SynFlow desde adentro. Ideas que ya están vivas.
+                        Explora nuestras soluciones reales, escanea el QR y vive la experiencia SinFlow IA desde adentro. Ideas que ya están vivas.
                     </motion.p>
                 </div>
 
@@ -163,7 +163,7 @@ export function PortfolioExperience() {
                         </h3>
 
                         <Link
-                            href="https://wa.me/573000000000?text=Hola,%20quisiera%20construir%20una%20idea%20con%20Sinflow"
+                            href="https://wa.me/573000000000?text=Hola,%20quisiera%20construir%20una%20idea%20con%20SinFlow%20IA"
                             target="_blank"
                             className="inline-flex items-center gap-3 px-8 py-4 bg-white text-sinflow-primary font-bold text-lg rounded-full hover:bg-gray-100 transition-colors shadow-xl hover:shadow-2xl hover:-translate-y-1 transform"
                         >

@@ -37,10 +37,10 @@ export function About() {
                             viewport={{ once: true }}
                             className="bg-white/5 p-8 rounded-2xl border border-white/10 hover:border-sinflow-secondary/30 transition-colors"
                         >
-                            <h3 className="text-2xl font-bold text-white mb-4">🚀 El nacimiento de SynFlow</h3>
+                            <h3 className="text-2xl font-bold text-white mb-4">🚀 El nacimiento de SinFlow IA</h3>
                             <div className="text-gray-300 space-y-4 leading-relaxed">
                                 <p>
-                                    SynFlow nace como una apuesta de emprendimiento impulsada por la unión de <strong className="text-white">cuatro socios apasionados por la transformación digital</strong>.
+                                    SinFlow IA nace como una apuesta de emprendimiento impulsada por la unión de <strong className="text-white">cuatro socios apasionados por la transformación digital</strong>.
                                 </p>
                                 <p>
                                     Nuestro punto de encuentro fue el mismo que hoy conecta al talento global: plataformas profesionales como <strong>LinkedIn</strong>, donde coincidimos no solo por habilidades técnicas, sino por una visión compartida:
@@ -62,7 +62,7 @@ export function About() {
                             <h3 className="text-2xl font-bold text-white mb-4">🧠 Nuestra Visión</h3>
                             <div className="text-gray-300 space-y-4 leading-relaxed">
                                 <p>
-                                    Vivimos en una era donde la inteligencia artificial dejó de ser exclusiva de grandes corporaciones. En SynFlow creemos que las <strong>PyMEs</strong> y los <strong>emprendimientos en crecimiento</strong> también merecen acceder a soluciones tecnológicas avanzadas.
+                                    Vivimos en una era donde la inteligencia artificial dejó de ser exclusiva de grandes corporaciones. En SinFlow IA creemos que las <strong>PyMEs</strong> y los <strong>emprendimientos en crecimiento</strong> también merecen acceder a soluciones tecnológicas avanzadas.
                                 </p>
                                 <p>
                                     Nuestra misión es <strong className="text-white">hacer simple lo complejo</strong>, llevando la inteligencia artificial al corazón de los procesos empresariales sin barreras técnicas innecesarias.

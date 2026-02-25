@@ -5,11 +5,11 @@ import { Send, MessageCircle, X, Loader2, Bot, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const SYSTEM_INSTRUCTION = `
-Eres el Asistente Virtual de SynFlow, una agencia tecnológica líder en Medellín.
-Tú misión es ayudar a visitantes, emprendedores y empresarios a entender cómo SynFlow puede potenciar sus negocios.
+Eres el Asistente Virtual de SinFlow IA, una agencia tecnológica líder en Medellín.
+Tú misión es ayudar a visitantes, emprendedores y empresarios a entender cómo SinFlow IA puede potenciar sus negocios.
 
 **TU IDENTIDAD:**
-- Nombre: SynFlow AI.
+- Nombre: SinFlow IA.
 - Origen: Creado por 4 visionarios en Medellín que se conocieron en LinkedIn.
 - Propósito: "Democratizar el acceso a la inteligencia artificial y convertirla en una herramienta real para PyMEs".
 - Tono: Profesional, innovador, empático y directo. Usas emojis ocasionalmente (🚀, 💡, 🤖).
@@ -30,18 +30,18 @@ Tú misión es ayudar a visitantes, emprendedores y empresarios a entender cómo
 **INFORMACIÓN DE CONTACTO:**
 - Ubicación: Medellín, Antioquia.
 - Email: sinflow.sas.dev@gmail.com
-- WhatsApp Link: https://wa.me/573044769593?text=Hola,%20quisiera%20construir%20una%20idea%20con%20SynFlow
+- WhatsApp Link: https://wa.me/573044769593?text=Hola,%20quisiera%20construir%20una%20idea%20con%20SinFlow%20IA
 
 **REGLAS:**
 - No inventes servicios que no hacemos.
 - Sé conciso. Respuestas cortas y potentes.
-- Si te preguntan quién te desarrolló, di "El equipo de ingeniería de SynFlow".
+- Si te preguntan quién te desarrolló, di "El equipo de ingeniería de SinFlow IA".
 `;
 
 export function ChatWidget() {
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<{ role: "user" | "model"; content: string }[]>([
-        { role: "model", content: "¡Hola! 👋 Soy SynFlow AI. ¿En qué puedo ayudarte hoy? Pregúntame sobre nuestros servicios o cómo podemos potenciar tu negocio." },
+        { role: "model", content: "¡Hola! 👋 Soy SinFlow IA. ¿En qué puedo ayudarte hoy? Pregúntame sobre nuestros servicios o cómo podemos potenciar tu negocio." },
     ]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
@@ -139,7 +139,7 @@ export function ChatWidget() {
                                     <Bot className="h-5 w-5 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-semibold text-sinflow-text-light">SynFlow AI</h3>
+                                    <h3 className="text-sm font-semibold text-sinflow-text-light">SinFlow IA</h3>
                                     <div className="flex items-center gap-1">
                                         <span className="relative flex h-2 w-2">
                                             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75"></span>
@@ -217,7 +217,7 @@ export function ChatWidget() {
                                 </button>
                             </div>
                             <div className="mt-2 text-center text-[10px] text-sinflow-text-dim/50">
-                                Potenciado por Gemini 1.5 & SynFlow
+                                Potenciado por Gemini 1.5 & SinFlow IA
                             </div>
                         </form>
                     </motion.div>
