@@ -10,7 +10,7 @@ import { Quote } from "lucide-react";
 
 const testimonials = [
     {
-        content: "SinFlow IA transformó completamente nuestra gestión de datos. La implementación de IA nos ahorró un 40% en costos operativos.",
+        content: "SynFlow IA transformó completamente nuestra gestión de datos. La implementación de IA nos ahorró un 40% en costos operativos.",
         author: "Carlos Rodriguez",
         role: "CEO, TechSolutions",
         image: "https://randomuser.me/api/portraits/men/32.jpg"

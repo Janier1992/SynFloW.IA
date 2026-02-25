@@ -27,7 +27,7 @@ export function Footer() {
                     content: (
                         <>
                             <p className="mb-4">
-                                Somos <strong>SinFlow IA</strong>, una agencia de soluciones tecnológicas dedicada al desarrollo de aplicaciones web y móviles, enfocada especialmente en el sector PYMES.
+                                Somos <strong>SynFlow IA</strong>, una agencia de soluciones tecnológicas dedicada al desarrollo de aplicaciones web y móviles, enfocada especialmente en el sector PYMES.
                             </p>
                             <p>
                                 Nuestro objetivo es democratizar el acceso a la tecnología de punta, permitiendo que negocios en crecimiento puedan optimizar sus operaciones, escalar sus ventas y mejorar la experiencia de sus clientes mediante herramientas digitales personalizadas, Inteligencia Artificial y automatización.
@@ -41,7 +41,7 @@ export function Footer() {
                     content: (
                         <>
                             <p className="mb-4">
-                                En <strong>SinFlow IA</strong>, respetamos y aseguramos la privacidad de los datos personales de nuestros usuarios. Nos comprometemos a garantizar que cualquier información recopilada sea utilizada de manera responsable, transparente y segura.
+                                En <strong>SynFlow IA</strong>, respetamos y aseguramos la privacidad de los datos personales de nuestros usuarios. Nos comprometemos a garantizar que cualquier información recopilada sea utilizada de manera responsable, transparente y segura.
                             </p>
                             <h4 className="font-bold text-white mt-4 mb-2">Principios Clave:</h4>
                             <ul className="list-disc pl-5 space-y-2 mb-4">
@@ -62,13 +62,13 @@ export function Footer() {
                     content: (
                         <>
                             <p className="mb-4">
-                                Al acceder y utilizar los servicios de <strong>SinFlow IA</strong>, aceptas cumplir con los siguientes términos y condiciones de uso, los cuales rigen la relación entre la agencia y el cliente bajo las leyes de la República de Colombia.
+                                Al acceder y utilizar los servicios de <strong>SynFlow IA</strong>, aceptas cumplir con los siguientes términos y condiciones de uso, los cuales rigen la relación entre la agencia y el cliente bajo las leyes de la República de Colombia.
                             </p>
                             <ul className="list-disc pl-5 space-y-2 mb-4">
                                 <li><strong>Uso de la Plataforma:</strong> El usuario se compromete a usar nuestros servicios de manera lícita y ética.</li>
-                                <li><strong>Propiedad Intelectual:</strong> Todo el código, diseño y contenido desarrollado por SinFlow IA es propiedad intelectual protegida, salvo acuerdo contrario por contrato.</li>
+                                <li><strong>Propiedad Intelectual:</strong> Todo el código, diseño y contenido desarrollado por SynFlow IA es propiedad intelectual protegida, salvo acuerdo contrario por contrato.</li>
                                 <li><strong>Modificaciones:</strong> Nos reservamos el derecho de modificar estos términos en cualquier momento notificando a los usuarios.</li>
-                                <li><strong>Responsabilidad:</strong> SinFlow IA no se hace responsable por el uso indebido de las soluciones entregadas una vez finalizado el soporte.</li>
+                                <li><strong>Responsabilidad:</strong> SynFlow IA no se hace responsable por el uso indebido de las soluciones entregadas una vez finalizado el soporte.</li>
                             </ul>
                         </>
                     )
@@ -132,12 +132,12 @@ export function Footer() {
                         <Link href="/" className="flex items-center gap-2 mb-4">
                             <Image
                                 src="/sinflow-logo.jpg"
-                                alt="SinFlow IA Logo"
+                                alt="SynFlow IA Logo"
                                 width={48}
                                 height={48}
                                 className="w-12 h-12 rounded-full object-cover"
                             />
-                            <span className="text-2xl font-bold text-white tracking-tighter">SinFlow IA</span>
+                            <span className="text-2xl font-bold text-white tracking-tighter">SynFlow IA</span>
                         </Link >
                         <p className="text-sm mb-6">
                             Transformamos empresas mediante inteligencia artificial, datos y automatización avanzada.
@@ -192,7 +192,7 @@ export function Footer() {
                 </div >
                 <div className="mt-12 pt-8 border-t border-gray-800 text-center md:text-left flex flex-col md:flex-row justify-between items-center text-sm">
                     <div className="flex flex-col gap-1">
-                        <p>&copy; {new Date().getFullYear()} SinFlow IA. Todos los derechos reservados.</p>
+                        <p>&copy; {new Date().getFullYear()} SynFlow IA. Todos los derechos reservados.</p>
                     </div>
                     <div className="mt-4 md:mt-0 flex flex-col md:flex-row gap-4 md:space-x-6 text-center md:text-right">
                         <button onClick={openModal('privacy')} className="hover:text-white transition-colors">Política de Tratamiento de Datos</button>

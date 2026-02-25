@@ -41,12 +41,12 @@ export function Navbar() {
                         <Link href="/" className="flex items-center gap-2 text-2xl font-bold text-white tracking-tighter">
                             <Image
                                 src="/sinflow-logo.jpg"
-                                alt="SinFlow IA Logo"
+                                alt="SynFlow IA Logo"
                                 width={48}
                                 height={48}
                                 className="w-12 h-12 rounded-full object-cover"
                             />
-                            <span>SinFlow IA</span>
+                            <span>SynFlow IA</span>
                         </Link >
                     </div >
 

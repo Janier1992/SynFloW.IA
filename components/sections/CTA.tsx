@@ -21,7 +21,7 @@ export function CTA() {
             await new Promise(resolve => setTimeout(resolve, 1000));
 
             // Construir mensaje de WhatsApp
-            const message = `Hola SinFlow IA, soy ${name}. Me gustaría recibir consultoría sobre Inteligencia Artificial y Automatización para mi negocio (${email}).`;
+            const message = `Hola SynFlow IA, soy ${name}. Me gustaría recibir consultoría sobre Inteligencia Artificial y Automatización para mi negocio (${email}).`;
             const whatsappUrl = `https://wa.me/573044769593?text=${encodeURIComponent(message)}`;
 
             // Abrir WhatsApp

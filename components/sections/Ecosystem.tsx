@@ -43,7 +43,7 @@ export function Ecosystem() {
                             transition={{ delay: 0.1 }}
                             className="text-gray-400 text-lg mb-8 leading-relaxed"
                         >
-                            Medellín presenta un entorno favorable para SinFlow IA, con una notable concentración de centros de innovación tecnológica. La ciudad cuenta con hubs clave como Ruta N, el Centro para la Cuarta Revolución Industrial y una vibrante comunidad de coworking y empresas de software.
+                            Medellín presenta un entorno favorable para SynFlow IA, con una notable concentración de centros de innovación tecnológica. La ciudad cuenta con hubs clave como Ruta N, el Centro para la Cuarta Revolución Industrial y una vibrante comunidad de coworking y empresas de software.
                         </motion.p>
 
                         <div className="space-y-6">
