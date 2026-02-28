@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Send, MessageCircle, X, Loader2, Bot, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Turnstile } from "@marsidev/react-turnstile";
 
 const SYSTEM_INSTRUCTION = `
 Eres el Asistente Virtual de SynFlow IA, una agencia tecnológica líder en Medellín.
@@ -24,13 +25,13 @@ Tú misión es ayudar a visitantes, emprendedores y empresarios a entender cómo
 **TU OBJETIVO EN LA CONVERSACIÓN:**
 1. Responder dudas sobre servicios.
 2. Identificar oportunidades de negocio.
-3. **CRÍTICO**: Si el usuario muestra interés en contratar, cotizar o iniciar un proyecto, DEBES invitarlo a contactar por WhatsApp.
-   - Frase de cierre sugerida para interesados: "¡Me encanta esa idea! Lo mejor es que hables directamente con nuestro equipo para estructurarla. Escríbenos aquí: 👇"
+3. **CRÍTICO**: Si el usuario muestra interés en cotizar, contratar o explícitamente pide hablar con alguien en directo, DEBES entregarle el enlace con nuestro contacto de WhatsApp.
+   - Frase de cierre sugerida: "Para brindarte una atención más personalizada, puedes hablar en directo con nuestro equipo a través de WhatsApp en este enlace: https://wa.me/573044769593 (+57 304 476 9593)"
 
 **INFORMACIÓN DE CONTACTO:**
 - Ubicación: Medellín, Antioquia.
 - Email: synflow.ia@gmail.com
-- WhatsApp Link: https://wa.me/573044769593?text=Hola,%20quisiera%20construir%20una%20idea%20con%20SynFlow%20IA
+- WhatsApp: +57 304 476 9593 (Enlace: https://wa.me/573044769593)
 
 **REGLAS:**
 - No inventes servicios que no hacemos.
@@ -45,6 +46,7 @@ export function ChatWidget() {
     ]);
     const [input, setInput] = useState("");
     const [isLoading, setIsLoading] = useState(false);
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = () => {
@@ -70,7 +72,8 @@ export function ChatWidget() {
                     ...messages.slice(1), // Exclude the initial greeting
                     { role: "user", content: userMessage }
                 ],
-                systemInstruction: SYSTEM_INSTRUCTION
+                systemInstruction: SYSTEM_INSTRUCTION,
+                turnstileToken: turnstileToken // Enviar token para validación backend
             };
 
             const response = await fetch("/api/chat", {
@@ -81,7 +84,11 @@ export function ChatWidget() {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(errorText || `Error HTTP ${response.status}`);
+                // Check if it's a bot validation or rate limit error
+                if (response.status === 403 || response.status === 429) {
+                    throw new Error(errorText); // Mostrar el mensaje del servidor directly
+                }
+                throw new Error("Tuvimos un problema procesando tu solicitud.");
             }
 
             if (!response.body) {
@@ -199,7 +206,18 @@ export function ChatWidget() {
                         </div>
 
                         {/* Input */}
-                        <form onSubmit={handleSubmit} className="border-t border-sinflow-border/50 bg-sinflow-bg p-4">
+                        <form onSubmit={handleSubmit} className="border-t border-sinflow-border/50 bg-sinflow-bg p-4 flex flex-col gap-2">
+                            {/* Turnstile Widget (Conditionally rendered when secret/sitekey exists) */}
+                            {process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY && (
+                                <div className="flex justify-center scale-90 origin-bottom">
+                                    <Turnstile
+                                        siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+                                        onSuccess={(token) => setTurnstileToken(token)}
+                                        options={{ theme: "dark", size: "compact" }}
+                                    />
+                                </div>
+                            )}
+
                             <div className="relative flex items-center">
                                 <input
                                     type="text"
@@ -210,14 +228,14 @@ export function ChatWidget() {
                                 />
                                 <button
                                     type="submit"
-                                    disabled={isLoading || !input.trim()}
+                                    disabled={isLoading || !input.trim() || (process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ? !turnstileToken : false)}
                                     className="absolute right-2 rounded-lg p-1.5 text-sinflow-secondary hover:bg-sinflow-secondary/10 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
                                 >
                                     <Send className="h-5 w-5" />
                                 </button>
                             </div>
-                            <div className="mt-2 text-center text-[10px] text-sinflow-text-dim/50">
-                                Potenciado por Gemini 1.5 & SynFlow IA
+                            <div className="text-center text-[10px] text-sinflow-text-dim/50">
+                                Potenciado por Gemini 2.5 Flash & SynFlow IA
                             </div>
                         </form>
                     </motion.div>

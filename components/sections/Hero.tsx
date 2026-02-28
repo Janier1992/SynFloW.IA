@@ -1,11 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 export function Hero() {
+    const shouldReduceMotion = useReducedMotion();
+
     return (
         <section id="hero" className="relative min-h-screen flex items-center justify-center pt-20 overflow-hidden">
             {/* Background Elements */}
@@ -16,9 +18,9 @@ export function Hero() {
 
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center z-10">
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6 }}
+                    transition={{ duration: shouldReduceMotion ? 0 : 0.6 }}
                     className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-sinflow-secondary text-sm font-medium mb-8 backdrop-blur-sm"
                 >
                     <Sparkles className="w-4 h-4" />
@@ -26,9 +28,9 @@ export function Hero() {
                 </motion.div>
 
                 <motion.h1
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.1 }}
+                    transition={{ duration: shouldReduceMotion ? 0 : 0.6, delay: shouldReduceMotion ? 0 : 0.1 }}
                     className="text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white mb-6"
                 >
                     Potenciamos el Futuro con
@@ -38,18 +40,18 @@ export function Hero() {
                 </motion.h1>
 
                 <motion.p
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.2 }}
+                    transition={{ duration: shouldReduceMotion ? 0 : 0.6, delay: shouldReduceMotion ? 0 : 0.2 }}
                     className="text-lg sm:text-xl text-gray-400 mb-10 max-w-2xl mx-auto"
                 >
                     Ofrecemos soluciones avanzadas en desarrollo de software, IA y analítica de datos para transformar y escalar tu negocio.
                 </motion.p>
 
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.6, delay: 0.3 }}
+                    transition={{ duration: shouldReduceMotion ? 0 : 0.6, delay: shouldReduceMotion ? 0 : 0.3 }}
                     className="flex flex-col sm:flex-row items-center justify-center gap-4"
                 >
                     <Link

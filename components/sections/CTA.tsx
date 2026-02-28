@@ -6,6 +6,7 @@ import { ArrowRight, Check, Loader2, AlertCircle } from "lucide-react";
 
 export function CTA() {
     const [formState, setFormState] = useState<"idle" | "loading" | "success" | "error">("idle");
+    const [isFormVisible, setIsFormVisible] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -16,21 +17,31 @@ export function CTA() {
             const formData = new FormData(e.currentTarget);
             const name = formData.get("name") as string;
             const email = formData.get("email") as string;
+            const phone = formData.get("phone") as string;
+            const company = formData.get("company") as string | null;
+            const service = formData.get("service") as string;
+            const city = formData.get("city") as string;
 
             // Simular proceso breve
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            // Construir mensaje de WhatsApp
-            const message = `Hola SynFlow IA, soy ${name}. Me gustaría recibir consultoría sobre Inteligencia Artificial y Automatización para mi negocio (${email}).`;
-            const whatsappUrl = `https://wa.me/573044769593?text=${encodeURIComponent(message)}`;
+            // Enviar datos usando nuestro Proxy interno para evitar bloqueos de CORS
+            const response = await fetch("/api/webhook", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, phone, company, service, city })
+            });
 
-            // Abrir WhatsApp
-            window.open(whatsappUrl, '_blank');
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || "Error al conectar con el servidor.");
+            }
 
             setFormState("success");
-        } catch (error) {
+        } catch (error: any) {
             setFormState("error");
-            setErrorMessage("Ocurrió un error inesperado. Intenta nuevamente.");
+            setErrorMessage(error.message || "Ocurrió un error inesperado al enviar los datos.");
         }
     };
 
@@ -96,13 +107,28 @@ export function CTA() {
                                 <div className="w-20 h-20 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-6">
                                     <Check className="w-10 h-10" />
                                 </div>
-                                <h3 className="text-2xl font-bold text-white mb-2">¡Redirigiendo a WhatsApp!</h3>
-                                <p className="text-gray-400">Si no se abre, revisa tus ventanas emergentes.</p>
+                                <h3 className="text-2xl font-bold text-white mb-2">¡Solicitud enviada!</h3>
+                                <p className="text-gray-400">Pronto recibirás un correo electrónico automático con más información.</p>
                                 <button
-                                    onClick={() => setFormState("idle")}
+                                    onClick={() => {
+                                        setFormState("idle");
+                                        setIsFormVisible(false);
+                                    }}
                                     className="mt-8 text-sinflow-secondary hover:text-white transition-colors text-sm font-medium"
                                 >
                                     Enviar otro mensaje
+                                </button>
+                            </div>
+                        ) : !isFormVisible ? (
+                            <div className="text-center py-12 flex flex-col items-center justify-center h-full min-h-[400px]">
+                                <h3 className="text-3xl font-bold text-white mb-4">Inicia tu Transformación</h3>
+                                <p className="text-gray-400 mb-8 max-w-sm">Déjanos tus datos para recibir consultoría personalizada y descubrir cómo podemos escalar tu negocio.</p>
+                                <button
+                                    onClick={() => setIsFormVisible(true)}
+                                    className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-sinflow-secondary to-sinflow-accent text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-sinflow-secondary/25 flex items-center justify-center gap-2"
+                                >
+                                    Completar formulario de contacto
+                                    <ArrowRight className="w-5 h-5" />
                                 </button>
                             </div>
                         ) : (
@@ -133,6 +159,55 @@ export function CTA() {
                                             required
                                             className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all"
                                             placeholder="john@empresa.com"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="phone" className="block text-sm font-medium text-gray-300 mb-1.5">Teléfono / Celular</label>
+                                        <input
+                                            type="tel"
+                                            name="phone"
+                                            id="phone"
+                                            required
+                                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all"
+                                            placeholder="+57 300 000 0000"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="company" className="block text-sm font-medium text-gray-300 mb-1.5">Empresa / Negocio (Opcional)</label>
+                                        <input
+                                            type="text"
+                                            name="company"
+                                            id="company"
+                                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all"
+                                            placeholder="Mi Empresa S.A.S"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="service" className="block text-sm font-medium text-gray-300 mb-1.5">Servicio Principal Solicitado</label>
+                                        <select
+                                            name="service"
+                                            id="service"
+                                            required
+                                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all cursor-pointer [&>option]:bg-gray-900 [&>option]:text-white"
+                                        >
+                                            <option value="" disabled selected>Selecciona un servicio...</option>
+                                            <option value="Consultoría e Inteligencia Artificial">Consultoría e Inteligencia Artificial</option>
+                                            <option value="Automatización (RPA & IA)">Automatización Inteligente</option>
+                                            <option value="Analítica de Datos & BI">Analítica de Datos & BI</option>
+                                            <option value="Desarrollo a Medida">Desarrollo de Software / Apps Web</option>
+                                            <option value="Desarrollo de Agentes y Chatbots">Agentes Inteligentes y Chatbots</option>
+                                            <option value="Otro / Contacto General">Otro / Información General</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="city" className="block text-sm font-medium text-gray-300 mb-1.5">Ciudad</label>
+                                        <input
+                                            type="text"
+                                            name="city"
+                                            id="city"
+                                            required
+                                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all"
+                                            placeholder="Medellín"
                                         />
                                     </div>
                                 </div>

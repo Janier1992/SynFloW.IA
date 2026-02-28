@@ -1,0 +1,136 @@
+{
+    "name": "Bot SynFlow IA - WhatsApp & Gemini",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "whatsapp-webhook",
+                "responseMode": "lastNode",
+                "options": {}
+            },
+            "id": "e0d0f5fc-0ec0-4416-8c43-16aab8a3b2b8",
+            "name": "Webhook (WhatsApp Entrante)",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                100,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "text": "={{ $json.body.entry[0].changes[0].value.messages[0].text.body }}",
+                "options": {
+                    "systemMessage": "Eres el Asistente Virtual de SynFlow IA, una agencia tecnológica líder en Medellín.\nTu misión es ayudar a visitantes, emprendedores y empresarios a entender cómo SynFlow IA puede potenciar sus negocios.\n\nTU IDENTIDAD:\n- Nombre: SynFlow IA.\n- Propósito: Demokratizar el acceso a IA y ser una herramienta real.\n- Tono: Profesional, innovador, empático y directo. Emojis ocasionales.\n\nTUS SERVICIOS:\n1. Integración de Inteligencia Artificial\n2. Automatización Inteligente (RPA)\n3. Analítica de Datos\n4. Business Intelligence\n5. Desarrollo a Medida Next.js\n\nOBJETIVO:\nRecopilarás las ideas del potencial cliente o absolverás sus dudas básicas. Invítalos a agendar una cita o llamada en synflow.ia@gmail.com cuando el interés sea muy alto.\n\nReglas: Se corto y contundente, esto es un chat de whatsapp, responde con 1 a 3 parrafos cortos máximo."
+                }
+            },
+            "id": "c7a0364d-7521-4f15-8c6b-27ccfa89fa12",
+            "name": "Agente IA (SynFlow)",
+            "type": "@n8n/n8n-nodes-langchain.agent",
+            "typeVersion": 1,
+            "position": [
+                400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "modelName": "models/gemini-2.5-flash",
+                "options": {}
+            },
+            "id": "1be753de-42e1-45de-98aa-91223eb25ee2",
+            "name": "Google Gemini Model",
+            "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+            "typeVersion": 1,
+            "position": [
+                350,
+                500
+            ]
+        },
+        {
+            "parameters": {},
+            "id": "3be521ed-77de-4903-88ee-1234988ab29a",
+            "name": "Window Buffer Memory",
+            "type": "@n8n/n8n-nodes-langchain.memoryWindowBuffer",
+            "typeVersion": 1,
+            "position": [
+                500,
+                500
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "send",
+                "phoneNumberId": "SUSTITUIR_POR_TU_PHONE_NUMBER_ID_DE_META",
+                "recipientType": "individual",
+                "recipientPhoneNumber": "={{ $('Webhook (WhatsApp Entrante)').item.json.body.entry[0].changes[0].value.contacts[0].wa_id }}",
+                "text": "={{ $json.output }}"
+            },
+            "id": "8ec239af-1941-4cf1-8a40-84c2dfac1380",
+            "name": "Respuesta WhatsApp API",
+            "type": "n8n-nodes-base.whatsApp",
+            "typeVersion": 1,
+            "position": [
+                800,
+                300
+            ]
+        }
+    ],
+    "pinData": {},
+    "connections": {
+        "Webhook (WhatsApp Entrante)": {
+            "main": [
+                [
+                    {
+                        "node": "Agente IA (SynFlow)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Google Gemini Model": {
+            "ai_languageModel": [
+                [
+                    {
+                        "node": "Agente IA (SynFlow)",
+                        "type": "ai_languageModel",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Window Buffer Memory": {
+            "ai_memory": [
+                [
+                    {
+                        "node": "Agente IA (SynFlow)",
+                        "type": "ai_memory",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Agente IA (SynFlow)": {
+            "main": [
+                [
+                    {
+                        "node": "Respuesta WhatsApp API",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    },
+    "active": false,
+    "settings": {
+        "executionOrder": "v1"
+    },
+    "versionId": "f7be81f9-f53e-4d43-9874-fb123abd1ee1",
+    "meta": {
+        "templateCredsSetupCompleted": true
+    },
+    "id": "synflow-whatsapp-bot",
+    "tags": []
+}
