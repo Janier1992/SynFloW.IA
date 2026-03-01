@@ -6,7 +6,6 @@ import { ArrowRight, Check, Loader2, AlertCircle } from "lucide-react";
 
 export function CTA() {
     const [formState, setFormState] = useState<"idle" | "loading" | "success" | "error">("idle");
-    const [isFormVisible, setIsFormVisible] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -112,23 +111,10 @@ export function CTA() {
                                 <button
                                     onClick={() => {
                                         setFormState("idle");
-                                        setIsFormVisible(false);
                                     }}
                                     className="mt-8 text-sinflow-secondary hover:text-white transition-colors text-sm font-medium"
                                 >
                                     Enviar otro mensaje
-                                </button>
-                            </div>
-                        ) : !isFormVisible ? (
-                            <div className="text-center py-12 flex flex-col items-center justify-center h-full min-h-[400px]">
-                                <h3 className="text-3xl font-bold text-white mb-4">Inicia tu Transformación</h3>
-                                <p className="text-gray-400 mb-8 max-w-sm">Déjanos tus datos para recibir consultoría personalizada y descubrir cómo podemos escalar tu negocio.</p>
-                                <button
-                                    onClick={() => setIsFormVisible(true)}
-                                    className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-sinflow-secondary to-sinflow-accent text-white font-bold rounded-xl hover:opacity-90 transition-all shadow-lg shadow-sinflow-secondary/25 flex items-center justify-center gap-2"
-                                >
-                                    Completar formulario de contacto
-                                    <ArrowRight className="w-5 h-5" />
                                 </button>
                             </div>
                         ) : (

@@ -61,12 +61,14 @@ export function Hero() {
                         Agenda una demo
                         <ArrowRight className="w-4 h-4" />
                     </Link>
-                    <Link
-                        href="#contacto"
+                    <a
+                        href="https://wa.me/573044769593?text=Hola,%20me%20gustar%C3%ADa%20saber%20m%C3%A1s%20sobre%20SynFlow%20IA"
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="w-full sm:w-auto px-8 py-3.5 bg-white/5 text-white font-medium rounded-full border border-white/10 hover:bg-white/10 transition-all backdrop-blur-sm"
                     >
                         Contáctanos
-                    </Link>
+                    </a>
                 </motion.div>
             </div>
 
