@@ -23,6 +23,10 @@ interface EmailRequest {
     subtotal?: number;
     tax?: number;
     total?: number;
+    paymentType?: "unico" | "diferido";
+    installments?: number;
+    downPayment?: number;
+    installmentAmount?: number;
   };
 }
 
@@ -161,6 +165,10 @@ const getQuoteApprovedHtml = (data: {
   subtotal: number;
   tax: number;
   total: number;
+  paymentType?: "unico" | "diferido";
+  installments?: number;
+  downPayment?: number;
+  installmentAmount?: number;
 }) => {
   const formatCOP = (val: number) =>
     new Intl.NumberFormat("es-CO", {
@@ -168,6 +176,38 @@ const getQuoteApprovedHtml = (data: {
       currency: "COP",
       maximumFractionDigits: 0
     }).format(val);
+
+  const isDeferred = data.paymentType === "diferido";
+  const installments = data.installments || 1;
+  const downPayment = data.downPayment || 0;
+  const installmentAmount = data.installmentAmount || 0;
+
+  // Payment plan block: states the modality clearly and, for deferred plans,
+  // lists each installment with the concept it's being billed for.
+  const paymentPlanHtml = isDeferred
+    ? `
+      <div class="proposal-title" style="margin-top:35px;">Modalidad de Pago</div>
+      <div style="background-color:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.25); border-radius:12px; padding:20px 22px; margin:15px 0;">
+        <p style="margin:0 0 12px 0; font-weight:bold; color:#166534; font-size:14px;">💳 Pago Diferido — ${installments} cuotas mensuales</p>
+        ${downPayment > 0 ? `<p style="margin:4px 0; font-size:13px; color:#334155;">Cuota inicial (abono): <strong>${formatCOP(downPayment)}</strong></p>` : ""}
+        <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;">
+          <tbody>
+            ${Array.from({ length: installments }, (_, i) => `
+            <tr>
+              <td style="padding:8px 0; border-bottom:1px solid rgba(34,197,94,0.15); color:#334155;">Cuota ${i + 1} de ${installments}</td>
+              <td style="padding:8px 0; border-bottom:1px solid rgba(34,197,94,0.15); text-align:right; font-weight:bold; color:#0F172A;">${formatCOP(installmentAmount)}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+        <p style="margin:14px 0 0 0; font-size:12px; color:#64748B;">Cada cuota mensual se factura por concepto de: <strong>${data.services}</strong></p>
+      </div>
+    `
+    : `
+      <div class="proposal-title" style="margin-top:35px;">Modalidad de Pago</div>
+      <div style="background-color:#F1F5F9; border-radius:12px; padding:16px 20px; margin:15px 0;">
+        <p style="margin:0; font-size:13px; color:#334155;">Pago único por la totalidad del proyecto, por concepto de: <strong>${data.services}</strong></p>
+      </div>
+    `;
 
   return `
 <!DOCTYPE html>
@@ -259,10 +299,12 @@ const getQuoteApprovedHtml = (data: {
         </tbody>
       </table>
 
+      ${paymentPlanHtml}
+
       <p style="margin-top: 25px; margin-bottom: 30px;">Para proceder con la planificación de sprints de desarrollo e inicio técnico, por favor confirma tu aprobación haciendo clic en el siguiente botón o respondiendo directamente a este correo.</p>
-      
+
       <div style="text-align: center;">
-        <a href="https://wa.me/573044769593?text=Hola,%20he%20recibido%20el%20presupuesto%20desglosado%20por%20${formatCOP(data.total)}%20y%20quiero%20aprobarlo%20para%20iniciar%20desarrollo" class="button">Aprobar e Iniciar Desarrollo</a>
+        <a href="https://wa.me/573044769593?text=Hola,%20he%20recibido%20el%20presupuesto%20por%20${formatCOP(data.total)}%20(${isDeferred ? `${installments}%20cuotas%20de%20${formatCOP(installmentAmount)}` : "pago%20%C3%BAnico"})%20y%20quiero%20aprobarlo%20para%20iniciar%20desarrollo" class="button">Aprobar e Iniciar Desarrollo</a>
       </div>
     </div>
     <div class="footer">
@@ -373,6 +415,10 @@ export async function POST(req: Request) {
           subtotal: number;
           tax: number;
           total: number;
+          paymentType?: "unico" | "diferido";
+          installments?: number;
+          downPayment?: number;
+          installmentAmount?: number;
         });
         break;
       case "admin_register":

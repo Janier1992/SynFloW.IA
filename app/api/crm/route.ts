@@ -42,6 +42,10 @@ const quoteToDb = (d: Record<string, unknown>) => ({
   subtotal: Number(d.subtotal ?? 0),
   tax: Number(d.tax ?? 19),
   total: Number(d.total ?? 0),
+  payment_type: (d.paymentType as string) || (d.payment_type as string) || "unico",
+  installments: Number(d.installments ?? 1),
+  down_payment: Number(d.downPayment ?? d.down_payment ?? 0),
+  installment_amount: Number(d.installmentAmount ?? d.installment_amount ?? 0),
   status: (d.status as string) || "Pendiente",
 });
 
