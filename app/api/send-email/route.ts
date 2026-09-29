@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { generateQuotePdfBuffer } from "@/lib/quotePdf";
 
 // Type definitions for the payload
 interface EmailRequest {
   type: "new_lead" | "client_confirm" | "quote_approved" | "admin_register";
   to: string;
   data: {
+    id?: string;
+    createdAt?: string;
     name?: string;
     email?: string;
     phone?: string;
@@ -301,7 +304,9 @@ const getQuoteApprovedHtml = (data: {
 
       ${paymentPlanHtml}
 
-      <p style="margin-top: 25px; margin-bottom: 30px;">Para proceder con la planificación de sprints de desarrollo e inicio técnico, por favor confirma tu aprobación haciendo clic en el siguiente botón o respondiendo directamente a este correo.</p>
+      <p style="margin-top: 25px; margin-bottom: 10px;">📎 Adjunto a este correo encontrarás el <strong>presupuesto formal en PDF</strong>, con el mismo detalle mostrado arriba, listo para descargar, imprimir o compartir.</p>
+
+      <p style="margin-bottom: 30px;">Para proceder con la planificación de sprints de desarrollo e inicio técnico, por favor confirma tu aprobación haciendo clic en el siguiente botón o respondiendo directamente a este correo.</p>
 
       <div style="text-align: center;">
         <a href="https://wa.me/573044769593?text=Hola,%20he%20recibido%20el%20presupuesto%20por%20${formatCOP(data.total)}%20(${isDeferred ? `${installments}%20cuotas%20de%20${formatCOP(installmentAmount)}` : "pago%20%C3%BAnico"})%20y%20quiero%20aprobarlo%20para%20iniciar%20desarrollo" class="button">Aprobar e Iniciar Desarrollo</a>
@@ -391,6 +396,8 @@ export async function POST(req: Request) {
     // Determine subject and HTML template based on email type
     let htmlContent = "";
     let subject = "";
+    // PDF attachment reproducing the CRM "Presupuesto Comercial" view — only for quote_approved
+    let pdfAttachment: { filename: string; content: Buffer; contentType: string } | null = null;
 
     switch (type) {
       case "new_lead":
@@ -401,9 +408,11 @@ export async function POST(req: Request) {
         subject = "✉️ Hemos recibido tu solicitud - SynFlow IA";
         htmlContent = getClientConfirmHtml(data as { name: string; service: string; });
         break;
-      case "quote_approved":
+      case "quote_approved": {
         subject = "💼 Presupuesto Comercial Estimado - SynFlow IA";
-        htmlContent = getQuoteApprovedHtml(data as {
+        const quoteData = data as {
+          id?: string;
+          createdAt?: string;
           client: string;
           services: string;
           hoursEngineering: number;
@@ -419,8 +428,21 @@ export async function POST(req: Request) {
           installments?: number;
           downPayment?: number;
           installmentAmount?: number;
+        };
+        htmlContent = getQuoteApprovedHtml(quoteData);
+
+        const pdfBuffer = await generateQuotePdfBuffer({
+          ...quoteData,
+          id: quoteData.id || "PREVIEW",
+          createdAt: quoteData.createdAt || new Date().toISOString(),
         });
+        pdfAttachment = {
+          filename: `Presupuesto-SynFlowIA-${(quoteData.id || "preview").slice(0, 8)}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        };
         break;
+      }
       case "admin_register":
         subject = "🔑 Acceso Autorizado al CRM - SynFlow IA";
         htmlContent = getAdminRegisterHtml(data as { name: string; email: string; }, siteUrl);
@@ -450,9 +472,10 @@ export async function POST(req: Request) {
         to,
         subject,
         html: htmlContent,
+        attachments: pdfAttachment ? [pdfAttachment] : undefined,
       });
 
-      console.log(`[SMTP] Correo enviado exitosamente a ${to}. Asunto: ${subject}`);
+      console.log(`[SMTP] Correo enviado exitosamente a ${to}. Asunto: ${subject}${pdfAttachment ? ` (con adjunto ${pdfAttachment.filename})` : ""}`);
       return NextResponse.json({ success: true, message: `Correo real enviado a ${to}` });
     } else {
       // Mock sending by logging beautifully to the server console
@@ -461,6 +484,9 @@ export async function POST(req: Request) {
       console.log(`   Destinatario: ${to}`);
       console.log(`   Remitente:    ${from}`);
       console.log(`   Asunto:       ${subject}`);
+      if (pdfAttachment) {
+        console.log(`   Adjunto:      ${pdfAttachment.filename} (${(pdfAttachment.content.length / 1024).toFixed(1)} KB)`);
+      }
       console.log("--------------------------------------------------");
       console.log(`   [HTML BODY TEMPLATE GENERATED]`);
       console.log(htmlContent.trim());

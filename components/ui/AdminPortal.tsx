@@ -389,6 +389,8 @@ export function AdminPortal() {
           type: "quote_approved",
           to: clientEmail,
           data: {
+            id: q.id,
+            createdAt: q.createdAt,
             client: clientName,
             services: q.services,
             hoursEngineering: q.hoursEngineering,
