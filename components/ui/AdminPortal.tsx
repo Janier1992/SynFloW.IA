@@ -43,10 +43,14 @@ export function AdminPortal() {
   const [quoteForm, setQuoteForm] = useState({
     client: "",
     services: "Consultoría e Inteligencia Artificial",
+    scopeDescription: "",
     hoursEngineering: 0,
     hoursArchitecture: 0,
     hoursDevelopment: 0,
-    status: "Pendiente" as Quote["status"]
+    status: "Pendiente" as Quote["status"],
+    paymentType: "unico" as Quote["paymentType"],
+    installments: 3,
+    downPayment: 0
   });
 
   // Authentication states
@@ -177,9 +181,21 @@ export function AdminPortal() {
   const totalQuotedAmount = quotes.reduce((acc, q) => acc + q.total, 0);
   
   const approvedTestimonials = testimonials.filter(t => t.approved);
-  const averageRating = approvedTestimonials.length > 0 
+  const averageRating = approvedTestimonials.length > 0
     ? (approvedTestimonials.reduce((acc, t) => acc + t.rating, 0) / approvedTestimonials.length).toFixed(1)
     : "0.0";
+
+  // Live preview of the quote being drafted in the modal (subtotal/tax/total + installment plan)
+  const quoteFormSubtotal =
+    (quoteForm.hoursEngineering * config.rateEngineering) +
+    (quoteForm.hoursArchitecture * config.rateArchitecture) +
+    (quoteForm.hoursDevelopment * config.rateDevelopment);
+  const quoteFormTax = Math.round(quoteFormSubtotal * (config.tax / 100));
+  const quoteFormTotal = quoteFormSubtotal + quoteFormTax;
+  const quoteFormInstallmentAmount =
+    quoteForm.paymentType === "diferido" && quoteForm.installments > 0
+      ? Math.round((quoteFormTotal - quoteForm.downPayment) / quoteForm.installments)
+      : 0;
 
   // Handle lead update
   const handleSaveLead = async (e: React.FormEvent) => {
@@ -202,12 +218,19 @@ export function AdminPortal() {
   const handleSaveQuote = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const subtotal = 
-      (quoteForm.hoursEngineering * config.rateEngineering) + 
-      (quoteForm.hoursArchitecture * config.rateArchitecture) + 
+    const subtotal =
+      (quoteForm.hoursEngineering * config.rateEngineering) +
+      (quoteForm.hoursArchitecture * config.rateArchitecture) +
       (quoteForm.hoursDevelopment * config.rateDevelopment);
     const taxAmount = Math.round(subtotal * (config.tax / 100));
     const total = subtotal + taxAmount;
+
+    const isDeferred = quoteForm.paymentType === "diferido";
+    const installments = isDeferred ? Math.max(1, quoteForm.installments) : 1;
+    const downPayment = isDeferred ? quoteForm.downPayment : 0;
+    const installmentAmount = isDeferred
+      ? Math.round((total - downPayment) / installments)
+      : 0;
 
     if (editingQuote) {
       // Edit existing quote
@@ -215,12 +238,17 @@ export function AdminPortal() {
         ...editingQuote,
         client: quoteForm.client,
         services: quoteForm.services,
+        scopeDescription: quoteForm.scopeDescription,
         hoursEngineering: quoteForm.hoursEngineering,
         hoursArchitecture: quoteForm.hoursArchitecture,
         hoursDevelopment: quoteForm.hoursDevelopment,
         subtotal,
         taxAmount,
         total,
+        paymentType: quoteForm.paymentType,
+        installments,
+        downPayment,
+        installmentAmount,
         status: quoteForm.status
       };
       await updateQuote(updatedQuote);
@@ -231,6 +259,7 @@ export function AdminPortal() {
         leadId: selectedLeadForQuote || undefined,
         client: quoteForm.client,
         services: quoteForm.services,
+        scopeDescription: quoteForm.scopeDescription,
         hoursEngineering: quoteForm.hoursEngineering,
         hoursArchitecture: quoteForm.hoursArchitecture,
         hoursDevelopment: quoteForm.hoursDevelopment,
@@ -241,6 +270,10 @@ export function AdminPortal() {
         tax: config.tax,
         taxAmount,
         total,
+        paymentType: quoteForm.paymentType,
+        installments,
+        downPayment,
+        installmentAmount,
         status: quoteForm.status
       });
     }
@@ -250,10 +283,14 @@ export function AdminPortal() {
     setQuoteForm({
       client: "",
       services: "Consultoría e Inteligencia Artificial",
+      scopeDescription: "",
       hoursEngineering: 0,
       hoursArchitecture: 0,
       hoursDevelopment: 0,
-      status: "Pendiente"
+      status: "Pendiente",
+      paymentType: "unico",
+      installments: 3,
+      downPayment: 0
     });
     await reloadCRMState();
   };
@@ -264,10 +301,14 @@ export function AdminPortal() {
     setQuoteForm({
       client: q.client,
       services: q.services,
+      scopeDescription: q.scopeDescription || "",
       hoursEngineering: q.hoursEngineering,
       hoursArchitecture: q.hoursArchitecture,
       hoursDevelopment: q.hoursDevelopment,
-      status: q.status
+      status: q.status,
+      paymentType: q.paymentType || "unico",
+      installments: q.installments || 3,
+      downPayment: q.downPayment || 0
     });
     setIsQuoteModalOpen(true);
   };
@@ -278,10 +319,14 @@ export function AdminPortal() {
     setQuoteForm({
       client: l.company || l.name,
       services: l.service,
+      scopeDescription: "",
       hoursEngineering: 0,
       hoursArchitecture: 0,
       hoursDevelopment: 0,
-      status: "Pendiente"
+      status: "Pendiente",
+      paymentType: "unico",
+      installments: 3,
+      downPayment: 0
     });
     setIsQuoteModalOpen(true);
   };
@@ -350,8 +395,11 @@ export function AdminPortal() {
           type: "quote_approved",
           to: clientEmail,
           data: {
+            id: q.id,
+            createdAt: q.createdAt,
             client: clientName,
             services: q.services,
+            scopeDescription: q.scopeDescription,
             hoursEngineering: q.hoursEngineering,
             hoursArchitecture: q.hoursArchitecture,
             hoursDevelopment: q.hoursDevelopment,
@@ -361,6 +409,10 @@ export function AdminPortal() {
             subtotal: q.subtotal,
             tax: q.tax,
             total: q.total,
+            paymentType: q.paymentType,
+            installments: q.installments,
+            downPayment: q.downPayment,
+            installmentAmount: q.installmentAmount,
           },
         }),
       });
@@ -842,7 +894,18 @@ export function AdminPortal() {
                           <tr key={q.id} className="hover:bg-white/5 transition-colors">
                             <td className="p-4 font-semibold text-white">{q.client}</td>
                             <td className="p-4 text-gray-300">{q.services}</td>
-                            <td className="p-4 font-mono font-semibold text-sinflow-secondary">{formatCOP(q.total)}</td>
+                            <td className="p-4">
+                              <div className="font-mono font-semibold text-sinflow-secondary">{formatCOP(q.total)}</div>
+                              {q.paymentType === "diferido" ? (
+                                <span className="mt-1 inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                  Diferido · {q.installments}x {formatCOP(q.installmentAmount)}
+                                </span>
+                              ) : (
+                                <span className="mt-1 inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-gray-400 border border-white/10">
+                                  Pago único
+                                </span>
+                              )}
+                            </td>
                             <td className="p-4">
                               <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                                 q.status === "Pendiente" ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30" :
@@ -1218,6 +1281,20 @@ export function AdminPortal() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Descripción del Alcance del Servicio</label>
+                <textarea
+                  value={quoteForm.scopeDescription}
+                  onChange={(e) => setQuoteForm({ ...quoteForm, scopeDescription: e.target.value })}
+                  rows={4}
+                  placeholder="Ej. Diseño e implementación de un agente conversacional de IA para WhatsApp que califica leads automáticamente, integrado con el CRM y con flujos de automatización para agendamiento de citas. Incluye entrenamiento del modelo, pruebas y despliegue en producción."
+                  className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 resize-none"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">
+                  Este texto se muestra en el presupuesto (PDF y correo) antes del desglose de costos, para que el cliente entienda exactamente qué incluye la solución.
+                </p>
+              </div>
+
               <div className="border-t border-white/10 pt-4">
                 <h4 className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-3">Distribución de Horas Estimadas</h4>
                 
@@ -1273,32 +1350,93 @@ export function AdminPortal() {
                 </select>
               </div>
 
+              {/* Modalidad de Pago: pago único o diferido (mensualidades) */}
+              <div className="border-t border-white/10 pt-4">
+                <h4 className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-3">Modalidad de Pago</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setQuoteForm({ ...quoteForm, paymentType: "unico" })}
+                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                      quoteForm.paymentType === "unico"
+                        ? "bg-sinflow-secondary text-sinflow-primary border-sinflow-secondary"
+                        : "bg-black/30 text-gray-400 border-white/10 hover:border-white/20"
+                    }`}
+                  >
+                    Pago Único
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuoteForm({ ...quoteForm, paymentType: "diferido" })}
+                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                      quoteForm.paymentType === "diferido"
+                        ? "bg-sinflow-secondary text-sinflow-primary border-sinflow-secondary"
+                        : "bg-black/30 text-gray-400 border-white/10 hover:border-white/20"
+                    }`}
+                  >
+                    Pago Diferido (Mensualidades)
+                  </button>
+                </div>
+
+                {quoteForm.paymentType === "diferido" && (
+                  <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <label className="block text-[10px] font-semibold text-gray-400 mb-1">Número de Cuotas</label>
+                      <select
+                        value={quoteForm.installments}
+                        onChange={(e) => setQuoteForm({ ...quoteForm, installments: parseInt(e.target.value) || 1 })}
+                        className="w-full bg-gray-850 border border-white/10 rounded-xl p-2.5 text-white cursor-pointer [&>option]:bg-gray-900"
+                      >
+                        {[2, 3, 4, 6, 9, 12].map((n) => (
+                          <option key={n} value={n}>{n} cuotas mensuales</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-semibold text-gray-400 mb-1">Cuota Inicial / Abono (opcional)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xs">$</span>
+                        <input
+                          type="number"
+                          min="0"
+                          value={quoteForm.downPayment}
+                          onChange={(e) => setQuoteForm({ ...quoteForm, downPayment: parseInt(e.target.value) || 0 })}
+                          className="w-full bg-black/30 border border-white/10 rounded-xl py-2.5 pl-6 pr-3 text-white font-mono text-sm focus:outline-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Dynamic Totals Summary */}
               <div className="bg-white/5 rounded-2xl p-4 border border-white/5 space-y-1.5 font-mono text-xs">
                 <div className="flex justify-between text-gray-400">
                   <span>Subtotal:</span>
-                  <span>{formatCOP(
-                    (quoteForm.hoursEngineering * config.rateEngineering) + 
-                    (quoteForm.hoursArchitecture * config.rateArchitecture) + 
-                    (quoteForm.hoursDevelopment * config.rateDevelopment)
-                  )}</span>
+                  <span>{formatCOP(quoteFormSubtotal)}</span>
                 </div>
                 <div className="flex justify-between text-gray-400">
                   <span>Impuesto ({config.tax}%):</span>
-                  <span>{formatCOP(
-                    Math.round(((quoteForm.hoursEngineering * config.rateEngineering) + 
-                    (quoteForm.hoursArchitecture * config.rateArchitecture) + 
-                    (quoteForm.hoursDevelopment * config.rateDevelopment)) * (config.tax / 100))
-                  )}</span>
+                  <span>{formatCOP(quoteFormTax)}</span>
                 </div>
                 <div className="flex justify-between text-white font-bold border-t border-white/10 pt-2 text-sm">
                   <span>Total Estimado:</span>
-                  <span className="text-sinflow-secondary">{formatCOP(
-                    Math.round(((quoteForm.hoursEngineering * config.rateEngineering) + 
-                    (quoteForm.hoursArchitecture * config.rateArchitecture) + 
-                    (quoteForm.hoursDevelopment * config.rateDevelopment)) * (1 + config.tax / 100))
-                  )}</span>
+                  <span className="text-sinflow-secondary">{formatCOP(quoteFormTotal)}</span>
                 </div>
+                {quoteForm.paymentType === "diferido" && (
+                  <div className="border-t border-white/10 pt-2 mt-1 space-y-1">
+                    {quoteForm.downPayment > 0 && (
+                      <div className="flex justify-between text-gray-400">
+                        <span>Cuota inicial:</span>
+                        <span>{formatCOP(quoteForm.downPayment)}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-purple-300 font-bold">
+                      <span>{quoteForm.installments} cuotas mensuales de:</span>
+                      <span>{formatCOP(quoteFormInstallmentAmount)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -1371,13 +1509,19 @@ export function AdminPortal() {
 
               {/* Project description */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Servicios Incluidos</h4>
-                <p className="text-sm font-semibold text-gray-800 bg-gray-100/50 p-3 rounded-lg border border-gray-150">
-                  {previewingQuote.services}
-                </p>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">¿Qué incluye este servicio?</h4>
+                <div className="bg-gray-100/50 p-4 rounded-lg border border-gray-150 space-y-2">
+                  <p className="text-sm font-bold text-gray-800">{previewingQuote.services}</p>
+                  {previewingQuote.scopeDescription && (
+                    <p className="text-sm text-gray-600 whitespace-pre-line">{previewingQuote.scopeDescription}</p>
+                  )}
+                </div>
               </div>
 
               {/* Items Breakdown Table */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Desglose por Etapa de Desarrollo</h4>
+              </div>
               <div className="border border-gray-200 rounded-2xl overflow-hidden">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
@@ -1448,6 +1592,33 @@ export function AdminPortal() {
                     <span>{formatCOP(previewingQuote.total)}</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Plan de Pago */}
+              <div className="border border-gray-200 rounded-2xl p-5 bg-gray-50">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">Modalidad de Pago</h4>
+                {previewingQuote.paymentType === "diferido" ? (
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-bold text-gray-800">
+                      Pago Diferido — {previewingQuote.installments} cuotas mensuales
+                    </p>
+                    {previewingQuote.downPayment > 0 && (
+                      <p className="text-xs text-gray-600">
+                        Cuota inicial (abono): <span className="font-mono font-semibold">{formatCOP(previewingQuote.downPayment)}</span>
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-600">
+                      {previewingQuote.installments} cuotas mensuales de <span className="font-mono font-semibold">{formatCOP(previewingQuote.installmentAmount)}</span> cada una
+                    </p>
+                    <p className="text-[10px] text-gray-400 pt-1">
+                      Cada cuota se factura por concepto de: {previewingQuote.services}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-600">
+                    Pago único por la totalidad del proyecto, por concepto de: <span className="font-semibold text-gray-800">{previewingQuote.services}</span>
+                  </p>
+                )}
               </div>
 
               {/* Footer text */}

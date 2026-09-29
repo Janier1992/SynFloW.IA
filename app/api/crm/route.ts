@@ -33,6 +33,7 @@ const quoteToDb = (d: Record<string, unknown>) => ({
   lead_id: d.leadId || d.lead_id || null,
   client: d.client,
   services: d.services,
+  scope_description: (d.scopeDescription as string) || (d.scope_description as string) || "",
   hours_engineering: Number(d.hoursEngineering ?? d.hours_engineering ?? 0),
   hours_architecture: Number(d.hoursArchitecture ?? d.hours_architecture ?? 0),
   hours_development: Number(d.hoursDevelopment ?? d.hours_development ?? 0),
@@ -42,6 +43,10 @@ const quoteToDb = (d: Record<string, unknown>) => ({
   subtotal: Number(d.subtotal ?? 0),
   tax: Number(d.tax ?? 19),
   total: Number(d.total ?? 0),
+  payment_type: (d.paymentType as string) || (d.payment_type as string) || "unico",
+  installments: Number(d.installments ?? 1),
+  down_payment: Number(d.downPayment ?? d.down_payment ?? 0),
+  installment_amount: Number(d.installmentAmount ?? d.installment_amount ?? 0),
   status: (d.status as string) || "Pendiente",
 });
 

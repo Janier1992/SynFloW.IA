@@ -34,6 +34,7 @@ CREATE TABLE quotes (
     lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
     client TEXT NOT NULL,
     services TEXT NOT NULL,
+    scope_description TEXT NOT NULL DEFAULT '',
     hours_engineering NUMERIC NOT NULL DEFAULT 0,
     hours_architecture NUMERIC NOT NULL DEFAULT 0,
     hours_development NUMERIC NOT NULL DEFAULT 0,
@@ -43,6 +44,11 @@ CREATE TABLE quotes (
     subtotal NUMERIC NOT NULL DEFAULT 0,
     tax NUMERIC NOT NULL DEFAULT 19,
     total NUMERIC NOT NULL DEFAULT 0,
+    payment_type TEXT NOT NULL DEFAULT 'unico'
+        CHECK (payment_type IN ('unico', 'diferido')),
+    installments INTEGER NOT NULL DEFAULT 1 CHECK (installments >= 1),
+    down_payment NUMERIC NOT NULL DEFAULT 0,
+    installment_amount NUMERIC NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'Pendiente'
         CHECK (status IN ('Pendiente', 'Proceso', 'Completado')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL

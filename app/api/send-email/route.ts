@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
+import { generateQuotePdfBuffer } from "@/lib/quotePdf";
 
 // Type definitions for the payload
 interface EmailRequest {
   type: "new_lead" | "client_confirm" | "quote_approved" | "admin_register";
   to: string;
   data: {
+    id?: string;
+    createdAt?: string;
     name?: string;
     email?: string;
     phone?: string;
@@ -14,6 +17,7 @@ interface EmailRequest {
     description?: string;
     client?: string;
     services?: string;
+    scopeDescription?: string;
     hoursEngineering?: number;
     hoursArchitecture?: number;
     hoursDevelopment?: number;
@@ -23,8 +27,21 @@ interface EmailRequest {
     subtotal?: number;
     tax?: number;
     total?: number;
+    paymentType?: "unico" | "diferido";
+    installments?: number;
+    downPayment?: number;
+    installmentAmount?: number;
   };
 }
+
+// Escapes admin-entered free text before interpolating it into raw HTML email templates
+const escapeHtml = (str: string) =>
+  str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 // 1. HTML Template for notifying the company about a new lead
 const getNewLeadHtml = (data: {
@@ -152,6 +169,7 @@ const getClientConfirmHtml = (data: { name: string; service: string }) => `
 const getQuoteApprovedHtml = (data: {
   client: string;
   services: string;
+  scopeDescription?: string;
   hoursEngineering: number;
   hoursArchitecture: number;
   hoursDevelopment: number;
@@ -161,6 +179,10 @@ const getQuoteApprovedHtml = (data: {
   subtotal: number;
   tax: number;
   total: number;
+  paymentType?: "unico" | "diferido";
+  installments?: number;
+  downPayment?: number;
+  installmentAmount?: number;
 }) => {
   const formatCOP = (val: number) =>
     new Intl.NumberFormat("es-CO", {
@@ -168,6 +190,48 @@ const getQuoteApprovedHtml = (data: {
       currency: "COP",
       maximumFractionDigits: 0
     }).format(val);
+
+  const isDeferred = data.paymentType === "diferido";
+  const installments = data.installments || 1;
+  const downPayment = data.downPayment || 0;
+  const installmentAmount = data.installmentAmount || 0;
+
+  // Scope description block: explains, in plain language, what the client is
+  // paying for — shown before the hour/rate breakdown, not instead of it.
+  const scopeHtml = `
+    <div class="proposal-title">¿Qué incluye este servicio?</div>
+    <div style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:20px 22px; margin:15px 0 25px 0;">
+      <p style="margin:0 0 8px 0; font-weight:bold; color:#0F172A; font-size:14px;">${escapeHtml(data.services)}</p>
+      ${data.scopeDescription ? `<p style="margin:0; font-size:13px; color:#475569; white-space:pre-line;">${escapeHtml(data.scopeDescription)}</p>` : ""}
+    </div>
+  `;
+
+  // Payment plan block: states the modality clearly and, for deferred plans,
+  // lists each installment with the concept it's being billed for.
+  const paymentPlanHtml = isDeferred
+    ? `
+      <div class="proposal-title" style="margin-top:35px;">Modalidad de Pago</div>
+      <div style="background-color:rgba(34,197,94,0.06); border:1px solid rgba(34,197,94,0.25); border-radius:12px; padding:20px 22px; margin:15px 0;">
+        <p style="margin:0 0 12px 0; font-weight:bold; color:#166534; font-size:14px;">💳 Pago Diferido — ${installments} cuotas mensuales</p>
+        ${downPayment > 0 ? `<p style="margin:4px 0; font-size:13px; color:#334155;">Cuota inicial (abono): <strong>${formatCOP(downPayment)}</strong></p>` : ""}
+        <table style="width:100%; border-collapse:collapse; margin-top:10px; font-size:13px;">
+          <tbody>
+            ${Array.from({ length: installments }, (_, i) => `
+            <tr>
+              <td style="padding:8px 0; border-bottom:1px solid rgba(34,197,94,0.15); color:#334155;">Cuota ${i + 1} de ${installments}</td>
+              <td style="padding:8px 0; border-bottom:1px solid rgba(34,197,94,0.15); text-align:right; font-weight:bold; color:#0F172A;">${formatCOP(installmentAmount)}</td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+        <p style="margin:14px 0 0 0; font-size:12px; color:#64748B;">Cada cuota mensual se factura por concepto de: <strong>${data.services}</strong></p>
+      </div>
+    `
+    : `
+      <div class="proposal-title" style="margin-top:35px;">Modalidad de Pago</div>
+      <div style="background-color:#F1F5F9; border-radius:12px; padding:16px 20px; margin:15px 0;">
+        <p style="margin:0; font-size:13px; color:#334155;">Pago único por la totalidad del proyecto, por concepto de: <strong>${data.services}</strong></p>
+      </div>
+    `;
 
   return `
 <!DOCTYPE html>
@@ -198,8 +262,10 @@ const getQuoteApprovedHtml = (data: {
     <div class="content">
       <h2 style="color: #0F172A; font-size: 18px; margin-top: 0;">Estimado cliente de ${data.client},</h2>
       <p>Nos complace informarte que hemos finalizado la estimación comercial detallada de los servicios tecnológicos solicitados.</p>
-      <p>Tu propuesta detallada para el servicio <strong>${data.services}</strong> ya está configurada en nuestro sistema. A continuación se desglosa el presupuesto técnico estimado para el desarrollo del proyecto:</p>
-      
+      <p>Tu propuesta detallada para el servicio <strong>${data.services}</strong> ya está configurada en nuestro sistema. A continuación encontrarás el alcance de la solución y el desglose del presupuesto técnico estimado:</p>
+
+      ${scopeHtml}
+
       <div class="proposal-title">Desglose Comercial del Proyecto</div>
       
       <table class="item-table">
@@ -259,10 +325,14 @@ const getQuoteApprovedHtml = (data: {
         </tbody>
       </table>
 
-      <p style="margin-top: 25px; margin-bottom: 30px;">Para proceder con la planificación de sprints de desarrollo e inicio técnico, por favor confirma tu aprobación haciendo clic en el siguiente botón o respondiendo directamente a este correo.</p>
-      
+      ${paymentPlanHtml}
+
+      <p style="margin-top: 25px; margin-bottom: 10px;">📎 Adjunto a este correo encontrarás el <strong>presupuesto formal en PDF</strong>, con el mismo detalle mostrado arriba, listo para descargar, imprimir o compartir.</p>
+
+      <p style="margin-bottom: 30px;">Para proceder con la planificación de sprints de desarrollo e inicio técnico, por favor confirma tu aprobación haciendo clic en el siguiente botón o respondiendo directamente a este correo.</p>
+
       <div style="text-align: center;">
-        <a href="https://wa.me/573044769593?text=Hola,%20he%20recibido%20el%20presupuesto%20desglosado%20por%20${formatCOP(data.total)}%20y%20quiero%20aprobarlo%20para%20iniciar%20desarrollo" class="button">Aprobar e Iniciar Desarrollo</a>
+        <a href="https://wa.me/573044769593?text=Hola,%20he%20recibido%20el%20presupuesto%20por%20${formatCOP(data.total)}%20(${isDeferred ? `${installments}%20cuotas%20de%20${formatCOP(installmentAmount)}` : "pago%20%C3%BAnico"})%20y%20quiero%20aprobarlo%20para%20iniciar%20desarrollo" class="button">Aprobar e Iniciar Desarrollo</a>
       </div>
     </div>
     <div class="footer">
@@ -349,6 +419,8 @@ export async function POST(req: Request) {
     // Determine subject and HTML template based on email type
     let htmlContent = "";
     let subject = "";
+    // PDF attachment reproducing the CRM "Presupuesto Comercial" view — only for quote_approved
+    let pdfAttachment: { filename: string; content: Buffer; contentType: string } | null = null;
 
     switch (type) {
       case "new_lead":
@@ -359,11 +431,14 @@ export async function POST(req: Request) {
         subject = "✉️ Hemos recibido tu solicitud - SynFlow IA";
         htmlContent = getClientConfirmHtml(data as { name: string; service: string; });
         break;
-      case "quote_approved":
+      case "quote_approved": {
         subject = "💼 Presupuesto Comercial Estimado - SynFlow IA";
-        htmlContent = getQuoteApprovedHtml(data as {
+        const quoteData = data as {
+          id?: string;
+          createdAt?: string;
           client: string;
           services: string;
+          scopeDescription?: string;
           hoursEngineering: number;
           hoursArchitecture: number;
           hoursDevelopment: number;
@@ -373,8 +448,25 @@ export async function POST(req: Request) {
           subtotal: number;
           tax: number;
           total: number;
+          paymentType?: "unico" | "diferido";
+          installments?: number;
+          downPayment?: number;
+          installmentAmount?: number;
+        };
+        htmlContent = getQuoteApprovedHtml(quoteData);
+
+        const pdfBuffer = await generateQuotePdfBuffer({
+          ...quoteData,
+          id: quoteData.id || "PREVIEW",
+          createdAt: quoteData.createdAt || new Date().toISOString(),
         });
+        pdfAttachment = {
+          filename: `Presupuesto-SynFlowIA-${(quoteData.id || "preview").slice(0, 8)}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        };
         break;
+      }
       case "admin_register":
         subject = "🔑 Acceso Autorizado al CRM - SynFlow IA";
         htmlContent = getAdminRegisterHtml(data as { name: string; email: string; }, siteUrl);
@@ -404,9 +496,10 @@ export async function POST(req: Request) {
         to,
         subject,
         html: htmlContent,
+        attachments: pdfAttachment ? [pdfAttachment] : undefined,
       });
 
-      console.log(`[SMTP] Correo enviado exitosamente a ${to}. Asunto: ${subject}`);
+      console.log(`[SMTP] Correo enviado exitosamente a ${to}. Asunto: ${subject}${pdfAttachment ? ` (con adjunto ${pdfAttachment.filename})` : ""}`);
       return NextResponse.json({ success: true, message: `Correo real enviado a ${to}` });
     } else {
       // Mock sending by logging beautifully to the server console
@@ -415,6 +508,9 @@ export async function POST(req: Request) {
       console.log(`   Destinatario: ${to}`);
       console.log(`   Remitente:    ${from}`);
       console.log(`   Asunto:       ${subject}`);
+      if (pdfAttachment) {
+        console.log(`   Adjunto:      ${pdfAttachment.filename} (${(pdfAttachment.content.length / 1024).toFixed(1)} KB)`);
+      }
       console.log("--------------------------------------------------");
       console.log(`   [HTML BODY TEMPLATE GENERATED]`);
       console.log(htmlContent.trim());
