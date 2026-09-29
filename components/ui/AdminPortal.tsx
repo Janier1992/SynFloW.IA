@@ -43,6 +43,7 @@ export function AdminPortal() {
   const [quoteForm, setQuoteForm] = useState({
     client: "",
     services: "Consultoría e Inteligencia Artificial",
+    scopeDescription: "",
     hoursEngineering: 0,
     hoursArchitecture: 0,
     hoursDevelopment: 0,
@@ -237,6 +238,7 @@ export function AdminPortal() {
         ...editingQuote,
         client: quoteForm.client,
         services: quoteForm.services,
+        scopeDescription: quoteForm.scopeDescription,
         hoursEngineering: quoteForm.hoursEngineering,
         hoursArchitecture: quoteForm.hoursArchitecture,
         hoursDevelopment: quoteForm.hoursDevelopment,
@@ -257,6 +259,7 @@ export function AdminPortal() {
         leadId: selectedLeadForQuote || undefined,
         client: quoteForm.client,
         services: quoteForm.services,
+        scopeDescription: quoteForm.scopeDescription,
         hoursEngineering: quoteForm.hoursEngineering,
         hoursArchitecture: quoteForm.hoursArchitecture,
         hoursDevelopment: quoteForm.hoursDevelopment,
@@ -280,6 +283,7 @@ export function AdminPortal() {
     setQuoteForm({
       client: "",
       services: "Consultoría e Inteligencia Artificial",
+      scopeDescription: "",
       hoursEngineering: 0,
       hoursArchitecture: 0,
       hoursDevelopment: 0,
@@ -297,6 +301,7 @@ export function AdminPortal() {
     setQuoteForm({
       client: q.client,
       services: q.services,
+      scopeDescription: q.scopeDescription || "",
       hoursEngineering: q.hoursEngineering,
       hoursArchitecture: q.hoursArchitecture,
       hoursDevelopment: q.hoursDevelopment,
@@ -314,6 +319,7 @@ export function AdminPortal() {
     setQuoteForm({
       client: l.company || l.name,
       services: l.service,
+      scopeDescription: "",
       hoursEngineering: 0,
       hoursArchitecture: 0,
       hoursDevelopment: 0,
@@ -393,6 +399,7 @@ export function AdminPortal() {
             createdAt: q.createdAt,
             client: clientName,
             services: q.services,
+            scopeDescription: q.scopeDescription,
             hoursEngineering: q.hoursEngineering,
             hoursArchitecture: q.hoursArchitecture,
             hoursDevelopment: q.hoursDevelopment,
@@ -1274,6 +1281,20 @@ export function AdminPortal() {
                 </select>
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Descripción del Alcance del Servicio</label>
+                <textarea
+                  value={quoteForm.scopeDescription}
+                  onChange={(e) => setQuoteForm({ ...quoteForm, scopeDescription: e.target.value })}
+                  rows={4}
+                  placeholder="Ej. Diseño e implementación de un agente conversacional de IA para WhatsApp que califica leads automáticamente, integrado con el CRM y con flujos de automatización para agendamiento de citas. Incluye entrenamiento del modelo, pruebas y despliegue en producción."
+                  className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 resize-none"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">
+                  Este texto se muestra en el presupuesto (PDF y correo) antes del desglose de costos, para que el cliente entienda exactamente qué incluye la solución.
+                </p>
+              </div>
+
               <div className="border-t border-white/10 pt-4">
                 <h4 className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-3">Distribución de Horas Estimadas</h4>
                 
@@ -1488,13 +1509,19 @@ export function AdminPortal() {
 
               {/* Project description */}
               <div>
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Servicios Incluidos</h4>
-                <p className="text-sm font-semibold text-gray-800 bg-gray-100/50 p-3 rounded-lg border border-gray-150">
-                  {previewingQuote.services}
-                </p>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">¿Qué incluye este servicio?</h4>
+                <div className="bg-gray-100/50 p-4 rounded-lg border border-gray-150 space-y-2">
+                  <p className="text-sm font-bold text-gray-800">{previewingQuote.services}</p>
+                  {previewingQuote.scopeDescription && (
+                    <p className="text-sm text-gray-600 whitespace-pre-line">{previewingQuote.scopeDescription}</p>
+                  )}
+                </div>
               </div>
 
               {/* Items Breakdown Table */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400 mb-2">Desglose por Etapa de Desarrollo</h4>
+              </div>
               <div className="border border-gray-200 rounded-2xl overflow-hidden">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>

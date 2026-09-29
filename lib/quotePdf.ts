@@ -10,6 +10,7 @@ export interface QuotePdfData {
   createdAt: string;
   client: string;
   services: string;
+  scopeDescription?: string;
   hoursEngineering: number;
   hoursArchitecture: number;
   hoursDevelopment: number;
@@ -86,17 +87,31 @@ export function generateQuotePdfBuffer(data: QuotePdfData): Promise<Buffer> {
 
     y += 88;
 
-    // ── Services included ───────────────────────────────────
-    doc.font("Helvetica-Bold").fontSize(8).fillColor(COLORS.lightGray).text("SERVICIOS INCLUIDOS", left, y);
+    // ── ¿Qué incluye este servicio? (título + descripción de alcance) ──
+    doc.font("Helvetica-Bold").fontSize(8).fillColor(COLORS.lightGray).text("¿QUÉ INCLUYE ESTE SERVICIO?", left, y);
     y += 14;
+
     doc.font("Helvetica-Bold").fontSize(10);
-    const servicesBoxHeight = Math.max(30, doc.heightOfString(data.services, { width: pageWidth - 30 }) + 20);
+    const titleHeight = doc.heightOfString(data.services, { width: pageWidth - 30 });
+    let descHeight = 0;
+    if (data.scopeDescription) {
+      doc.font("Helvetica").fontSize(9);
+      descHeight = doc.heightOfString(data.scopeDescription, { width: pageWidth - 30 }) + 8;
+    }
+    const servicesBoxHeight = Math.max(30, titleHeight + descHeight + 20);
     doc.rect(left, y, pageWidth, servicesBoxHeight).fillAndStroke(COLORS.panelBg, COLORS.border);
     doc.font("Helvetica-Bold").fontSize(10).fillColor(COLORS.primary)
       .text(data.services, left + 15, y + 10, { width: pageWidth - 30 });
+    if (data.scopeDescription) {
+      doc.font("Helvetica").fontSize(9).fillColor(COLORS.gray)
+        .text(data.scopeDescription, left + 15, y + 10 + titleHeight + 8, { width: pageWidth - 30 });
+    }
     y += servicesBoxHeight + 20;
 
     // ── Breakdown table ──────────────────────────────────────
+    doc.font("Helvetica-Bold").fontSize(8).fillColor(COLORS.lightGray).text("DESGLOSE POR ETAPA DE DESARROLLO", left, y);
+    y += 14;
+
     const cols = [
       { label: "Concepto Profesional", width: pageWidth * 0.42 },
       { label: "Horas", width: pageWidth * 0.14, align: "center" as const },

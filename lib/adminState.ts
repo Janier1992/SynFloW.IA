@@ -21,6 +21,7 @@ export interface Quote {
   leadId?: string;
   client: string;
   services: string;
+  scopeDescription: string;
   hoursEngineering: number;
   hoursArchitecture: number;
   hoursDevelopment: number;
@@ -128,6 +129,7 @@ const mapDbQuote = (db: Record<string, unknown>): Quote => {
     leadId: (db.lead_id as string) || undefined,
     client: db.client as string,
     services: db.services as string,
+    scopeDescription: (db.scope_description as string) || "",
     hoursEngineering: Number(db.hours_engineering),
     hoursArchitecture: Number(db.hours_architecture),
     hoursDevelopment: Number(db.hours_development),

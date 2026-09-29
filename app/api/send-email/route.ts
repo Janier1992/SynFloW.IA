@@ -17,6 +17,7 @@ interface EmailRequest {
     description?: string;
     client?: string;
     services?: string;
+    scopeDescription?: string;
     hoursEngineering?: number;
     hoursArchitecture?: number;
     hoursDevelopment?: number;
@@ -32,6 +33,15 @@ interface EmailRequest {
     installmentAmount?: number;
   };
 }
+
+// Escapes admin-entered free text before interpolating it into raw HTML email templates
+const escapeHtml = (str: string) =>
+  str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 
 // 1. HTML Template for notifying the company about a new lead
 const getNewLeadHtml = (data: {
@@ -159,6 +169,7 @@ const getClientConfirmHtml = (data: { name: string; service: string }) => `
 const getQuoteApprovedHtml = (data: {
   client: string;
   services: string;
+  scopeDescription?: string;
   hoursEngineering: number;
   hoursArchitecture: number;
   hoursDevelopment: number;
@@ -184,6 +195,16 @@ const getQuoteApprovedHtml = (data: {
   const installments = data.installments || 1;
   const downPayment = data.downPayment || 0;
   const installmentAmount = data.installmentAmount || 0;
+
+  // Scope description block: explains, in plain language, what the client is
+  // paying for — shown before the hour/rate breakdown, not instead of it.
+  const scopeHtml = `
+    <div class="proposal-title">¿Qué incluye este servicio?</div>
+    <div style="background-color:#F8FAFC; border:1px solid #E2E8F0; border-radius:12px; padding:20px 22px; margin:15px 0 25px 0;">
+      <p style="margin:0 0 8px 0; font-weight:bold; color:#0F172A; font-size:14px;">${escapeHtml(data.services)}</p>
+      ${data.scopeDescription ? `<p style="margin:0; font-size:13px; color:#475569; white-space:pre-line;">${escapeHtml(data.scopeDescription)}</p>` : ""}
+    </div>
+  `;
 
   // Payment plan block: states the modality clearly and, for deferred plans,
   // lists each installment with the concept it's being billed for.
@@ -241,8 +262,10 @@ const getQuoteApprovedHtml = (data: {
     <div class="content">
       <h2 style="color: #0F172A; font-size: 18px; margin-top: 0;">Estimado cliente de ${data.client},</h2>
       <p>Nos complace informarte que hemos finalizado la estimación comercial detallada de los servicios tecnológicos solicitados.</p>
-      <p>Tu propuesta detallada para el servicio <strong>${data.services}</strong> ya está configurada en nuestro sistema. A continuación se desglosa el presupuesto técnico estimado para el desarrollo del proyecto:</p>
-      
+      <p>Tu propuesta detallada para el servicio <strong>${data.services}</strong> ya está configurada en nuestro sistema. A continuación encontrarás el alcance de la solución y el desglose del presupuesto técnico estimado:</p>
+
+      ${scopeHtml}
+
       <div class="proposal-title">Desglose Comercial del Proyecto</div>
       
       <table class="item-table">
@@ -415,6 +438,7 @@ export async function POST(req: Request) {
           createdAt?: string;
           client: string;
           services: string;
+          scopeDescription?: string;
           hoursEngineering: number;
           hoursArchitecture: number;
           hoursDevelopment: number;

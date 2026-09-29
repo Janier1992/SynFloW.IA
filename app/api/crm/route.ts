@@ -33,6 +33,7 @@ const quoteToDb = (d: Record<string, unknown>) => ({
   lead_id: d.leadId || d.lead_id || null,
   client: d.client,
   services: d.services,
+  scope_description: (d.scopeDescription as string) || (d.scope_description as string) || "",
   hours_engineering: Number(d.hoursEngineering ?? d.hours_engineering ?? 0),
   hours_architecture: Number(d.hoursArchitecture ?? d.hours_architecture ?? 0),
   hours_development: Number(d.hoursDevelopment ?? d.hours_development ?? 0),

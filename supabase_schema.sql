@@ -34,6 +34,7 @@ CREATE TABLE quotes (
     lead_id UUID REFERENCES leads(id) ON DELETE SET NULL,
     client TEXT NOT NULL,
     services TEXT NOT NULL,
+    scope_description TEXT NOT NULL DEFAULT '',
     hours_engineering NUMERIC NOT NULL DEFAULT 0,
     hours_architecture NUMERIC NOT NULL DEFAULT 0,
     hours_development NUMERIC NOT NULL DEFAULT 0,
