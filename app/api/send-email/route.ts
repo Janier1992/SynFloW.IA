@@ -18,6 +18,7 @@ interface EmailRequest {
     client?: string;
     services?: string;
     scopeDescription?: string;
+    projectLink?: string;
     hoursEngineering?: number;
     hoursArchitecture?: number;
     hoursDevelopment?: number;
@@ -27,7 +28,7 @@ interface EmailRequest {
     subtotal?: number;
     tax?: number;
     total?: number;
-    paymentType?: "unico" | "diferido";
+    paymentType?: "unico" | "diferido" | "suscripcion";
     installments?: number;
     downPayment?: number;
     installmentAmount?: number;
@@ -170,6 +171,7 @@ const getQuoteApprovedHtml = (data: {
   client: string;
   services: string;
   scopeDescription?: string;
+  projectLink?: string;
   hoursEngineering: number;
   hoursArchitecture: number;
   hoursDevelopment: number;
@@ -179,7 +181,7 @@ const getQuoteApprovedHtml = (data: {
   subtotal: number;
   tax: number;
   total: number;
-  paymentType?: "unico" | "diferido";
+  paymentType?: "unico" | "diferido" | "suscripcion";
   installments?: number;
   downPayment?: number;
   installmentAmount?: number;
@@ -192,6 +194,7 @@ const getQuoteApprovedHtml = (data: {
     }).format(val);
 
   const isDeferred = data.paymentType === "diferido";
+  const isSubscription = data.paymentType === "suscripcion";
   const installments = data.installments || 1;
   const downPayment = data.downPayment || 0;
   const installmentAmount = data.installmentAmount || 0;
@@ -206,8 +209,9 @@ const getQuoteApprovedHtml = (data: {
     </div>
   `;
 
-  // Payment plan block: states the modality clearly and, for deferred plans,
-  // lists each installment with the concept it's being billed for.
+  // Payment plan block: states the modality clearly — for deferred plans lists
+  // each installment, for subscriptions states the recurring monthly charge —
+  // with the concept it's being billed for.
   const paymentPlanHtml = isDeferred
     ? `
       <div class="proposal-title" style="margin-top:35px;">Modalidad de Pago</div>
@@ -226,12 +230,30 @@ const getQuoteApprovedHtml = (data: {
         <p style="margin:14px 0 0 0; font-size:12px; color:#64748B;">Cada cuota mensual se factura por concepto de: <strong>${data.services}</strong></p>
       </div>
     `
+    : isSubscription
+    ? `
+      <div class="proposal-title" style="margin-top:35px;">Modalidad de Pago</div>
+      <div style="background-color:rgba(59,130,246,0.06); border:1px solid rgba(59,130,246,0.25); border-radius:12px; padding:20px 22px; margin:15px 0;">
+        <p style="margin:0 0 8px 0; font-weight:bold; color:#1D4ED8; font-size:14px;">🔁 Suscripción Mensual — ${formatCOP(installmentAmount)} / mes</p>
+        <p style="margin:0; font-size:13px; color:#334155;">Servicio continuo, sin fecha de finalización definida. Al aprobar esta propuesta, quedas sujeto a este pago mensual mientras el servicio esté activo.</p>
+        <p style="margin:14px 0 0 0; font-size:12px; color:#64748B;">Cada mensualidad se factura por concepto de: <strong>${data.services}</strong></p>
+      </div>
+    `
     : `
       <div class="proposal-title" style="margin-top:35px;">Modalidad de Pago</div>
       <div style="background-color:#F1F5F9; border-radius:12px; padding:16px 20px; margin:15px 0;">
         <p style="margin:0; font-size:13px; color:#334155;">Pago único por la totalidad del proyecto, por concepto de: <strong>${data.services}</strong></p>
       </div>
     `;
+
+  // Project/prototype link block: a clickable button, shown only when set.
+  const projectLinkHtml = data.projectLink
+    ? `
+      <div style="text-align:center; margin:25px 0;">
+        <a href="${escapeHtml(data.projectLink)}" style="display:inline-block; background-color:#7B5CFF; color:#FFFFFF; font-weight:bold; padding:14px 32px; border-radius:8px; text-decoration:none; font-size:14px;">Ver Proyecto / Prototipo →</a>
+      </div>
+    `
+    : "";
 
   return `
 <!DOCTYPE html>
@@ -327,12 +349,14 @@ const getQuoteApprovedHtml = (data: {
 
       ${paymentPlanHtml}
 
+      ${projectLinkHtml}
+
       <p style="margin-top: 25px; margin-bottom: 10px;">📎 Adjunto a este correo encontrarás el <strong>presupuesto formal en PDF</strong>, con el mismo detalle mostrado arriba, listo para descargar, imprimir o compartir.</p>
 
       <p style="margin-bottom: 30px;">Para proceder con la planificación de sprints de desarrollo e inicio técnico, por favor confirma tu aprobación haciendo clic en el siguiente botón o respondiendo directamente a este correo.</p>
 
       <div style="text-align: center;">
-        <a href="https://wa.me/573044769593?text=Hola,%20he%20recibido%20el%20presupuesto%20por%20${formatCOP(data.total)}%20(${isDeferred ? `${installments}%20cuotas%20de%20${formatCOP(installmentAmount)}` : "pago%20%C3%BAnico"})%20y%20quiero%20aprobarlo%20para%20iniciar%20desarrollo" class="button">Aprobar e Iniciar Desarrollo</a>
+        <a href="https://wa.me/573044769593?text=Hola,%20he%20recibido%20el%20presupuesto%20por%20${formatCOP(data.total)}%20(${isDeferred ? `${installments}%20cuotas%20de%20${formatCOP(installmentAmount)}` : isSubscription ? `suscripci%C3%B3n%20mensual%20de%20${formatCOP(installmentAmount)}` : "pago%20%C3%BAnico"})%20y%20quiero%20aprobarlo%20para%20iniciar%20desarrollo" class="button">Aprobar e Iniciar Desarrollo</a>
       </div>
     </div>
     <div class="footer">
@@ -439,6 +463,7 @@ export async function POST(req: Request) {
           client: string;
           services: string;
           scopeDescription?: string;
+          projectLink?: string;
           hoursEngineering: number;
           hoursArchitecture: number;
           hoursDevelopment: number;
@@ -448,7 +473,7 @@ export async function POST(req: Request) {
           subtotal: number;
           tax: number;
           total: number;
-          paymentType?: "unico" | "diferido";
+          paymentType?: "unico" | "diferido" | "suscripcion";
           installments?: number;
           downPayment?: number;
           installmentAmount?: number;

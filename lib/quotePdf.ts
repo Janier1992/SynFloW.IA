@@ -11,6 +11,7 @@ export interface QuotePdfData {
   client: string;
   services: string;
   scopeDescription?: string;
+  projectLink?: string;
   hoursEngineering: number;
   hoursArchitecture: number;
   hoursDevelopment: number;
@@ -20,7 +21,7 @@ export interface QuotePdfData {
   subtotal: number;
   tax: number;
   total: number;
-  paymentType?: "unico" | "diferido";
+  paymentType?: "unico" | "diferido" | "suscripcion";
   installments?: number;
   downPayment?: number;
   installmentAmount?: number;
@@ -43,6 +44,10 @@ const COLORS = {
   green: "#166534",
   greenBg: "#F0FDF4",
   greenBorder: "#BBF7D0",
+  blue: "#1D4ED8",
+  blueBg: "#EFF6FF",
+  blueBorder: "#BFDBFE",
+  accent: "#7B5CFF",
 };
 
 export function generateQuotePdfBuffer(data: QuotePdfData): Promise<Buffer> {
@@ -184,10 +189,25 @@ export function generateQuotePdfBuffer(data: QuotePdfData): Promise<Buffer> {
 
     // ── Payment plan (Modalidad de Pago) ────────────────────
     const isDeferred = data.paymentType === "diferido" && (data.installments || 0) > 0;
+    const isSubscription = data.paymentType === "suscripcion";
     doc.font("Helvetica-Bold").fontSize(8).fillColor(COLORS.lightGray).text("MODALIDAD DE PAGO", left, y);
     y += 14;
 
-    if (isDeferred) {
+    if (isSubscription) {
+      const monthlyFee = data.installmentAmount || 0;
+      const boxHeight = 70;
+      doc.rect(left, y, pageWidth, boxHeight).fillAndStroke(COLORS.blueBg, COLORS.blueBorder);
+      let py = y + 14;
+      doc.font("Helvetica-Bold").fontSize(10).fillColor(COLORS.blue)
+        .text(`Suscripción Mensual — ${formatCOP(monthlyFee)} / mes`, left + 15, py, { width: pageWidth - 30 });
+      py += 18;
+      doc.font("Helvetica").fontSize(8).fillColor(COLORS.gray)
+        .text("Servicio continuo, sin fecha de finalización definida. El cliente queda sujeto a este pago mensual mientras el servicio esté activo.", left + 15, py, { width: pageWidth - 30 });
+      py += 26;
+      doc.font("Helvetica").fontSize(7).fillColor(COLORS.gray)
+        .text(`Cada mensualidad se factura por concepto de: ${data.services}`, left + 15, py, { width: pageWidth - 30 });
+      y += boxHeight + 15;
+    } else if (isDeferred) {
       const installments = data.installments || 1;
       const installmentAmount = data.installmentAmount || 0;
       const downPayment = data.downPayment || 0;
@@ -218,6 +238,20 @@ export function generateQuotePdfBuffer(data: QuotePdfData): Promise<Buffer> {
       doc.font("Helvetica").fontSize(9).fillColor(COLORS.gray)
         .text(`Pago único por la totalidad del proyecto, por concepto de: ${data.services}`, left + 15, y + 13, { width: pageWidth - 30 });
       y += 52;
+    }
+
+    // ── Project / prototype link (clickable) ────────────────
+    if (data.projectLink) {
+      const linkText = "Ver Proyecto / Prototipo →";
+      const boxHeight = 44;
+      doc.rect(left, y, pageWidth, boxHeight).fillAndStroke(COLORS.panelBg, COLORS.border);
+      doc.font("Helvetica-Bold").fontSize(11).fillColor(COLORS.accent);
+      const textWidth = doc.widthOfString(linkText);
+      const textX = left + (pageWidth - textWidth) / 2;
+      const textY = y + 15;
+      doc.text(linkText, textX, textY, { underline: true });
+      doc.link(textX, textY, textWidth, 14, data.projectLink);
+      y += boxHeight + 15;
     }
 
     // ── Footer ───────────────────────────────────────────────

@@ -57,6 +57,7 @@ const quoteToDb = (d: Record<string, unknown>) => ({
   installments: Number(d.installments ?? 1),
   down_payment: Number(d.downPayment ?? d.down_payment ?? 0),
   installment_amount: Number(d.installmentAmount ?? d.installment_amount ?? 0),
+  project_link: (d.projectLink as string) || (d.project_link as string) || "",
   status: (d.status as string) || "Pendiente",
 });
 

@@ -64,13 +64,15 @@ export function AdminPortal() {
     client: "",
     services: "Consultoría e Inteligencia Artificial",
     scopeDescription: "",
+    projectLink: "",
     hoursEngineering: 0,
     hoursArchitecture: 0,
     hoursDevelopment: 0,
     status: "Pendiente" as Quote["status"],
     paymentType: "unico" as Quote["paymentType"],
     installments: 3,
-    downPayment: 0
+    downPayment: 0,
+    monthlyFee: 0
   });
 
   // Authentication states
@@ -263,11 +265,14 @@ export function AdminPortal() {
     const total = subtotal + taxAmount;
 
     const isDeferred = quoteForm.paymentType === "diferido";
+    const isSubscription = quoteForm.paymentType === "suscripcion";
     const installments = isDeferred ? Math.max(1, quoteForm.installments) : 1;
     const downPayment = isDeferred ? quoteForm.downPayment : 0;
     const installmentAmount = isDeferred
       ? Math.round((total - downPayment) / installments)
-      : 0;
+      : isSubscription
+        ? quoteForm.monthlyFee
+        : 0;
 
     if (editingQuote) {
       // Edit existing quote
@@ -276,6 +281,7 @@ export function AdminPortal() {
         client: quoteForm.client,
         services: quoteForm.services,
         scopeDescription: quoteForm.scopeDescription,
+        projectLink: quoteForm.projectLink,
         hoursEngineering: quoteForm.hoursEngineering,
         hoursArchitecture: quoteForm.hoursArchitecture,
         hoursDevelopment: quoteForm.hoursDevelopment,
@@ -297,6 +303,7 @@ export function AdminPortal() {
         client: quoteForm.client,
         services: quoteForm.services,
         scopeDescription: quoteForm.scopeDescription,
+        projectLink: quoteForm.projectLink,
         hoursEngineering: quoteForm.hoursEngineering,
         hoursArchitecture: quoteForm.hoursArchitecture,
         hoursDevelopment: quoteForm.hoursDevelopment,
@@ -321,13 +328,15 @@ export function AdminPortal() {
       client: "",
       services: "Consultoría e Inteligencia Artificial",
       scopeDescription: "",
+      projectLink: "",
       hoursEngineering: 0,
       hoursArchitecture: 0,
       hoursDevelopment: 0,
       status: "Pendiente",
       paymentType: "unico",
       installments: 3,
-      downPayment: 0
+      downPayment: 0,
+      monthlyFee: 0
     });
     await reloadCRMState();
   };
@@ -339,13 +348,15 @@ export function AdminPortal() {
       client: q.client,
       services: q.services,
       scopeDescription: q.scopeDescription || "",
+      projectLink: q.projectLink || "",
       hoursEngineering: q.hoursEngineering,
       hoursArchitecture: q.hoursArchitecture,
       hoursDevelopment: q.hoursDevelopment,
       status: q.status,
       paymentType: q.paymentType || "unico",
       installments: q.installments || 3,
-      downPayment: q.downPayment || 0
+      downPayment: q.downPayment || 0,
+      monthlyFee: q.paymentType === "suscripcion" ? q.installmentAmount || 0 : 0
     });
     setIsQuoteModalOpen(true);
   };
@@ -357,13 +368,15 @@ export function AdminPortal() {
       client: l.company || l.name,
       services: l.service,
       scopeDescription: "",
+      projectLink: "",
       hoursEngineering: 0,
       hoursArchitecture: 0,
       hoursDevelopment: 0,
       status: "Pendiente",
       paymentType: "unico",
       installments: 3,
-      downPayment: 0
+      downPayment: 0,
+      monthlyFee: 0
     });
     setIsQuoteModalOpen(true);
   };
@@ -442,6 +455,7 @@ export function AdminPortal() {
             client: clientName,
             services: q.services,
             scopeDescription: q.scopeDescription,
+            projectLink: q.projectLink,
             hoursEngineering: q.hoursEngineering,
             hoursArchitecture: q.hoursArchitecture,
             hoursDevelopment: q.hoursDevelopment,
@@ -948,6 +962,10 @@ export function AdminPortal() {
                                 <span className="mt-1 inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
                                   Diferido · {q.installments}x {formatCOP(q.installmentAmount)}
                                 </span>
+                              ) : q.paymentType === "suscripcion" ? (
+                                <span className="mt-1 inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                                  Suscripción · {formatCOP(q.installmentAmount)}/mes
+                                </span>
                               ) : (
                                 <span className="mt-1 inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold bg-white/5 text-gray-400 border border-white/10">
                                   Pago único
@@ -1286,12 +1304,12 @@ export function AdminPortal() {
 
       {/* --- CREATE / EDIT QUOTE MODAL --- */}
       {isQuoteModalOpen && (
-        <div className="fixed inset-0 z-[10000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <form 
+        <div className="fixed inset-0 z-[10000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <form
             onSubmit={handleSaveQuote}
-            className="bg-gray-900 border border-white/10 rounded-3xl p-8 max-w-lg w-full space-y-6 my-8 animate-zoomIn"
+            className="bg-gray-900 border border-white/10 rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col animate-zoomIn"
           >
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0 border-b border-white/5">
               <h3 className="text-xl font-bold text-white">
                 {editingQuote ? "Editar Cotización" : "Generar Presupuesto Comercial"}
               </h3>
@@ -1309,10 +1327,10 @@ export function AdminPortal() {
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 p-6 overflow-y-auto">
               <div>
                 <label className="block text-xs font-semibold text-gray-400 mb-1">Cliente / Empresa</label>
-                <input 
+                <input
                   type="text"
                   value={quoteForm.client}
                   onChange={(e) => setQuoteForm({ ...quoteForm, client: e.target.value })}
@@ -1342,22 +1360,36 @@ export function AdminPortal() {
                 <textarea
                   value={quoteForm.scopeDescription}
                   onChange={(e) => setQuoteForm({ ...quoteForm, scopeDescription: e.target.value })}
-                  rows={4}
-                  placeholder="Ej. Diseño e implementación de un agente conversacional de IA para WhatsApp que califica leads automáticamente, integrado con el CRM y con flujos de automatización para agendamiento de citas. Incluye entrenamiento del modelo, pruebas y despliegue en producción."
+                  rows={3}
+                  placeholder="Ej. Diseño e implementación de un agente conversacional de IA para WhatsApp que califica leads automáticamente, integrado con el CRM y con flujos de automatización para agendamiento de citas."
                   className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 resize-none"
                 />
                 <p className="text-[10px] text-gray-500 mt-1">
-                  Este texto se muestra en el presupuesto (PDF y correo) antes del desglose de costos, para que el cliente entienda exactamente qué incluye la solución.
+                  Se muestra en el presupuesto (PDF y correo) antes del desglose de costos.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Link del Proyecto / Prototipo (opcional)</label>
+                <input
+                  type="url"
+                  value={quoteForm.projectLink}
+                  onChange={(e) => setQuoteForm({ ...quoteForm, projectLink: e.target.value })}
+                  placeholder="https://..."
+                  className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">
+                  Si ya hay un prototipo o proyecto desarrollado, el cliente recibirá este link como botón clicable en el correo y en el PDF adjunto.
                 </p>
               </div>
 
               <div className="border-t border-white/10 pt-4">
                 <h4 className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-3">Distribución de Horas Estimadas</h4>
-                
+
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-[10px] font-semibold text-gray-400 mb-1">Horas Ing. Datos</label>
-                    <input 
+                    <input
                       type="number"
                       value={quoteForm.hoursEngineering}
                       onChange={(e) => setQuoteForm({ ...quoteForm, hoursEngineering: parseInt(e.target.value) || 0 })}
@@ -1369,7 +1401,7 @@ export function AdminPortal() {
 
                   <div>
                     <label className="block text-[10px] font-semibold text-gray-400 mb-1">Horas Arq. UX</label>
-                    <input 
+                    <input
                       type="number"
                       value={quoteForm.hoursArchitecture}
                       onChange={(e) => setQuoteForm({ ...quoteForm, hoursArchitecture: parseInt(e.target.value) || 0 })}
@@ -1381,7 +1413,7 @@ export function AdminPortal() {
 
                   <div>
                     <label className="block text-[10px] font-semibold text-gray-400 mb-1">Horas Desarrollo</label>
-                    <input 
+                    <input
                       type="number"
                       value={quoteForm.hoursDevelopment}
                       onChange={(e) => setQuoteForm({ ...quoteForm, hoursDevelopment: parseInt(e.target.value) || 0 })}
@@ -1406,14 +1438,14 @@ export function AdminPortal() {
                 </select>
               </div>
 
-              {/* Modalidad de Pago: pago único o diferido (mensualidades) */}
+              {/* Modalidad de Pago: único, diferido (cuotas) o suscripción mensual */}
               <div className="border-t border-white/10 pt-4">
                 <h4 className="text-xs uppercase tracking-wider text-gray-500 font-bold mb-3">Modalidad de Pago</h4>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-3 gap-2">
                   <button
                     type="button"
                     onClick={() => setQuoteForm({ ...quoteForm, paymentType: "unico" })}
-                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                    className={`py-2.5 px-1 rounded-xl text-[11px] font-bold border transition-all ${
                       quoteForm.paymentType === "unico"
                         ? "bg-sinflow-secondary text-sinflow-primary border-sinflow-secondary"
                         : "bg-black/30 text-gray-400 border-white/10 hover:border-white/20"
@@ -1424,13 +1456,24 @@ export function AdminPortal() {
                   <button
                     type="button"
                     onClick={() => setQuoteForm({ ...quoteForm, paymentType: "diferido" })}
-                    className={`py-2.5 rounded-xl text-xs font-bold border transition-all ${
+                    className={`py-2.5 px-1 rounded-xl text-[11px] font-bold border transition-all ${
                       quoteForm.paymentType === "diferido"
                         ? "bg-sinflow-secondary text-sinflow-primary border-sinflow-secondary"
                         : "bg-black/30 text-gray-400 border-white/10 hover:border-white/20"
                     }`}
                   >
-                    Pago Diferido (Mensualidades)
+                    Diferido (Cuotas)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setQuoteForm({ ...quoteForm, paymentType: "suscripcion" })}
+                    className={`py-2.5 px-1 rounded-xl text-[11px] font-bold border transition-all ${
+                      quoteForm.paymentType === "suscripcion"
+                        ? "bg-sinflow-secondary text-sinflow-primary border-sinflow-secondary"
+                        : "bg-black/30 text-gray-400 border-white/10 hover:border-white/20"
+                    }`}
+                  >
+                    Suscripción Mensual
                   </button>
                 </div>
 
@@ -1463,6 +1506,26 @@ export function AdminPortal() {
                     </div>
                   </div>
                 )}
+
+                {quoteForm.paymentType === "suscripcion" && (
+                  <div className="mt-4">
+                    <label className="block text-[10px] font-semibold text-gray-400 mb-1">Valor de la Suscripción Mensual</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-mono text-xs">$</span>
+                      <input
+                        type="number"
+                        min="0"
+                        value={quoteForm.monthlyFee}
+                        onChange={(e) => setQuoteForm({ ...quoteForm, monthlyFee: parseInt(e.target.value) || 0 })}
+                        required
+                        className="w-full bg-black/30 border border-white/10 rounded-xl py-2.5 pl-6 pr-3 text-white font-mono text-sm focus:outline-none"
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1">
+                      Servicio continuo, sin fecha de finalización definida — el cliente queda sujeto a este pago mensual mientras el servicio esté activo.
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Dynamic Totals Summary */}
@@ -1493,15 +1556,25 @@ export function AdminPortal() {
                     </div>
                   </div>
                 )}
+                {quoteForm.paymentType === "suscripcion" && (
+                  <div className="border-t border-white/10 pt-2 mt-1">
+                    <div className="flex justify-between text-purple-300 font-bold">
+                      <span>Suscripción mensual:</span>
+                      <span>{formatCOP(quoteForm.monthlyFee)} / mes</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
-            <button 
-              type="submit"
-              className="w-full py-3.5 bg-sinflow-secondary text-sinflow-primary font-bold rounded-xl hover:opacity-95"
-            >
-              {editingQuote ? "Actualizar Cotización" : "Crear Cotización"}
-            </button>
+            <div className="p-6 pt-4 flex-shrink-0 border-t border-white/5">
+              <button
+                type="submit"
+                className="w-full py-3.5 bg-sinflow-secondary text-sinflow-primary font-bold rounded-xl hover:opacity-95"
+              >
+                {editingQuote ? "Actualizar Cotización" : "Crear Cotización"}
+              </button>
+            </div>
           </form>
         </div>
       )}
@@ -1672,12 +1745,38 @@ export function AdminPortal() {
                       Cada cuota se factura por concepto de: {previewingQuote.services}
                     </p>
                   </div>
+                ) : previewingQuote.paymentType === "suscripcion" ? (
+                  <div className="space-y-1.5">
+                    <p className="text-sm font-bold text-gray-800">
+                      Suscripción Mensual — <span className="font-mono">{formatCOP(previewingQuote.installmentAmount)} / mes</span>
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      Servicio continuo, sin fecha de finalización definida. El cliente queda sujeto a este pago mensual mientras el servicio esté activo.
+                    </p>
+                    <p className="text-[10px] text-gray-400 pt-1">
+                      Cada mensualidad se factura por concepto de: {previewingQuote.services}
+                    </p>
+                  </div>
                 ) : (
                   <p className="text-sm text-gray-600">
                     Pago único por la totalidad del proyecto, por concepto de: <span className="font-semibold text-gray-800">{previewingQuote.services}</span>
                   </p>
                 )}
               </div>
+
+              {/* Project / prototype link */}
+              {previewingQuote.projectLink && (
+                <div className="text-center">
+                  <a
+                    href={previewingQuote.projectLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-6 py-3 rounded-xl bg-sinflow-accent text-white font-bold text-sm hover:opacity-95"
+                  >
+                    Ver Proyecto / Prototipo →
+                  </a>
+                </div>
+              )}
 
               {/* Footer text */}
               <div className="text-center text-[10px] text-gray-400 border-t border-gray-100 pt-6">
