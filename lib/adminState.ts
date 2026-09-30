@@ -305,9 +305,6 @@ export const verifyAdminCredentials = async (
   email: string,
   password: string
 ): Promise<boolean> => {
-  // Default admin account always works
-  if (email === "admin@synflow.io" && (password === "admin123" || password === "admin")) return true;
-
   const result = await crmFetch("verify_admin", { email, password });
   return !!(result && result.success);
 };
