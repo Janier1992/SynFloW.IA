@@ -86,15 +86,43 @@ export const clearLocalCRMCache = () => {
   );
 };
 
+// Admin session token (Supabase access_token, issued at login), sent on every
+// admin-only /api/crm call so the server can verify who's calling.
+const ADMIN_TOKEN_KEY = "synflow_admin_token";
+
+const getAdminToken = (): string | null => {
+  if (!isBrowser()) return null;
+  return sessionStorage.getItem(ADMIN_TOKEN_KEY);
+};
+
+const setAdminToken = (token: string) => {
+  if (!isBrowser()) return;
+  sessionStorage.setItem(ADMIN_TOKEN_KEY, token);
+};
+
+export const clearAdminToken = () => {
+  if (!isBrowser()) return;
+  sessionStorage.removeItem(ADMIN_TOKEN_KEY);
+};
+
 // Fetch wrapper for the /api/crm server route
 const crmFetch = async (action: string, data?: unknown) => {
   try {
+    const token = getAdminToken();
     const res = await fetch("/api/crm", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ action, data: data || {} }),
     });
     const json = await res.json();
+    if (res.status === 401) {
+      clearAdminToken();
+      if (isBrowser()) window.dispatchEvent(new Event("admin_session_expired"));
+      return null;
+    }
     if (!res.ok || json.error) {
       console.error(`[CRM] Error en '${action}':`, json.error || `HTTP ${res.status}`);
       return null;
@@ -214,6 +242,12 @@ export const deleteLead = async (id: string): Promise<void> => {
   await crmFetch("delete_lead", { id });
 };
 
+export const getLeadEmail = async (leadId: string): Promise<{ email: string; name: string } | null> => {
+  const row = await crmFetch("get_lead_email", { leadId });
+  if (row && row.email) return { email: row.email as string, name: (row.name as string) || "" };
+  return null;
+};
+
 // Kept for backwards-compat — no-op
 export const saveLeads = async (_leads: Lead[]): Promise<void> => { return; };
 
@@ -306,5 +340,9 @@ export const verifyAdminCredentials = async (
   password: string
 ): Promise<boolean> => {
   const result = await crmFetch("verify_admin", { email, password });
-  return !!(result && result.success);
+  if (result && result.success && result.accessToken) {
+    setAdminToken(result.accessToken as string);
+    return true;
+  }
+  return false;
 };
