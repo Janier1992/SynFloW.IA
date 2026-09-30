@@ -17,6 +17,16 @@ function getSupabase() {
 const err = (msg: string, status = 400) =>
   NextResponse.json({ error: msg }, { status });
 
+// Actions reachable from the public landing page (no admin session required).
+// Everything else touches admin-only data (leads, quotes, full testimonial list,
+// business config) and requires a valid Supabase Auth session token.
+const PUBLIC_ACTIONS = new Set([
+  "add_lead",
+  "add_testimonial",
+  "get_approved_testimonials",
+  "verify_admin",
+]);
+
 // Row mappers
 const leadToDb = (d: Record<string, unknown>) => ({
   name: d.name,
@@ -67,6 +77,20 @@ export async function POST(req: NextRequest) {
   }
 
   const { action, data = {} } = body;
+
+  // Admin-only actions require a valid Supabase Auth session token, sent as
+  // "Authorization: Bearer <access_token>" (issued at login by "verify_admin").
+  if (!PUBLIC_ACTIONS.has(action)) {
+    const authHeader = req.headers.get("authorization") || "";
+    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado. Inicia sesión nuevamente." }, { status: 401 });
+    }
+    const { data: userData, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !userData?.user) {
+      return NextResponse.json({ error: "Sesión inválida o expirada. Inicia sesión nuevamente." }, { status: 401 });
+    }
+  }
 
   try {
     switch (action) {
@@ -266,7 +290,11 @@ export async function POST(req: NextRequest) {
         if (error) {
           return err(error.message);
         }
-        return NextResponse.json({ success: !!authData.user, user: authData.user });
+        return NextResponse.json({
+          success: !!authData.user,
+          user: authData.user,
+          accessToken: authData.session?.access_token,
+        });
       }
 
       // ══════════════════════════════════════

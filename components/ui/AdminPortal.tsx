@@ -11,7 +11,8 @@ import {
   getCRMConfig, saveCRMConfig, Lead, Quote, 
   Testimonial, CRMConfig, addQuote, deleteLead, deleteQuote, 
   toggleTestimonialApproval, deleteTestimonial, verifyAdminCredentials,
-  updateLead, updateQuote, updateLeadStatus, updateQuoteStatus, clearLocalCRMCache
+  updateLead, updateQuote, updateLeadStatus, updateQuoteStatus, clearLocalCRMCache,
+  clearAdminToken, getLeadEmail
 } from "@/lib/adminState";
 import Image from "next/image";
 
@@ -112,6 +113,7 @@ export function AdminPortal() {
   const handleLogout = () => {
     setIsLoggedIn(false);
     setIsOpen(false); // Close the portal completely — return to landing page
+    clearAdminToken();
     if (typeof window !== "undefined") {
       sessionStorage.removeItem("synflow_admin_auth");
       // Scroll back to top of landing page
@@ -169,6 +171,15 @@ export function AdminPortal() {
     };
     window.addEventListener("crm_state_updated", handleUpdate);
 
+    // The server rejected a request as unauthenticated/expired (see crmFetch in lib/adminState.ts) —
+    // bounce back to the login screen instead of leaving the UI silently broken.
+    const handleSessionExpired = () => {
+      setIsLoggedIn(false);
+      sessionStorage.removeItem("synflow_admin_auth");
+      showToast("error", "Tu sesión expiró o no es válida. Inicia sesión nuevamente.");
+    };
+    window.addEventListener("admin_session_expired", handleSessionExpired);
+
     // Auto-open portal if URL contains ?admin=open (e.g. from confirmation email button)
     const params = new URLSearchParams(window.location.search);
     if (params.get("admin") === "open") {
@@ -182,6 +193,7 @@ export function AdminPortal() {
       window.removeEventListener("keydown", handleKeyDown);
       window.removeEventListener("open_admin_portal", handleOpenPortal);
       window.removeEventListener("crm_state_updated", handleUpdate);
+      window.removeEventListener("admin_session_expired", handleSessionExpired);
     };
   }, []);
 
@@ -405,18 +417,11 @@ export function AdminPortal() {
       clientName = associatedLead.name;
     } else if (q.leadId) {
       // Fallback: query the server for the lead email
-      try {
-        const res = await fetch("/api/crm", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "get_lead_email", data: { leadId: q.leadId } }),
-        });
-        const json = await res.json();
-        if (json.data) {
-          clientEmail = json.data.email;
-          clientName = json.data.name || q.client;
-        }
-      } catch { /* ignore */ }
+      const lead = await getLeadEmail(q.leadId);
+      if (lead) {
+        clientEmail = lead.email;
+        clientName = lead.name || q.client;
+      }
     }
 
     if (!clientEmail) {
