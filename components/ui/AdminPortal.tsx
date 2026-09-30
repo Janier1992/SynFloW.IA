@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { 
-  X, Users, DollarSign, Star, FileText, Settings, Plus, 
-  Trash2, Edit2, Mail, Eye, 
-  Activity, Printer, AlertCircle, LogOut, CornerUpLeft 
+import {
+  X, Users, DollarSign, Star, FileText, Settings, Plus,
+  Trash2, Edit2, Mail, Eye, Check,
+  Activity, Printer, AlertCircle, LogOut, CornerUpLeft
 } from "lucide-react";
 import { 
   getLeads, getQuotes, getTestimonials, 
@@ -38,6 +38,25 @@ export function AdminPortal() {
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [selectedLeadForQuote, setSelectedLeadForQuote] = useState<string>("");
   const [previewingQuote, setPreviewingQuote] = useState<Quote | null>(null);
+
+  // Styled replacements for native confirm()/alert() dialogs, to stay consistent with the dark "glass" theme
+  const [confirmDialog, setConfirmDialog] = useState<{
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    onConfirm: () => void;
+  } | null>(null);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+  };
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = setTimeout(() => setToast(null), 4500);
+    return () => clearTimeout(timer);
+  }, [toast]);
 
   // New quote form state
   const [quoteForm, setQuoteForm] = useState({
@@ -207,11 +226,17 @@ export function AdminPortal() {
   };
 
   // Handle lead deletion
-  const handleDeleteLead = async (id: string) => {
-    if (confirm("¿Estás seguro de eliminar este lead?")) {
-      await deleteLead(id);
-      await reloadCRMState();
-    }
+  const handleDeleteLead = (id: string) => {
+    setConfirmDialog({
+      title: "Eliminar lead",
+      message: "¿Estás seguro de eliminar este lead? Esta acción no se puede deshacer.",
+      confirmLabel: "Eliminar",
+      onConfirm: async () => {
+        await deleteLead(id);
+        setConfirmDialog(null);
+        await reloadCRMState();
+      },
+    });
   };
 
   // Handle quote creation/update
@@ -332,11 +357,17 @@ export function AdminPortal() {
   };
 
   // Handle quote deletion
-  const handleDeleteQuote = async (id: string) => {
-    if (confirm("¿Estás seguro de eliminar esta cotización?")) {
-      await deleteQuote(id);
-      await reloadCRMState();
-    }
+  const handleDeleteQuote = (id: string) => {
+    setConfirmDialog({
+      title: "Eliminar cotización",
+      message: "¿Estás seguro de eliminar esta cotización? Esta acción no se puede deshacer.",
+      confirmLabel: "Eliminar",
+      onConfirm: async () => {
+        await deleteQuote(id);
+        setConfirmDialog(null);
+        await reloadCRMState();
+      },
+    });
   };
 
   // Handle testimonial approval toggle
@@ -346,11 +377,17 @@ export function AdminPortal() {
   };
 
   // Handle testimonial deletion
-  const handleDeleteTestimonial = async (id: string) => {
-    if (confirm("¿Estás seguro de eliminar esta opinión?")) {
-      await deleteTestimonial(id);
-      await reloadCRMState();
-    }
+  const handleDeleteTestimonial = (id: string) => {
+    setConfirmDialog({
+      title: "Eliminar opinión",
+      message: "¿Estás seguro de eliminar esta opinión? Esta acción no se puede deshacer.",
+      confirmLabel: "Eliminar",
+      onConfirm: async () => {
+        await deleteTestimonial(id);
+        setConfirmDialog(null);
+        await reloadCRMState();
+      },
+    });
   };
 
   // Handle quote email notification via API
@@ -383,7 +420,7 @@ export function AdminPortal() {
     }
 
     if (!clientEmail) {
-      alert("No se encontró el correo del cliente asociado a esta cotización.\nEdita el lead y verifica que tenga un correo registrado.");
+      showToast("error", "No se encontró el correo del cliente asociado a esta cotización. Edita el lead y verifica que tenga un correo registrado.");
       return;
     }
 
@@ -419,19 +456,20 @@ export function AdminPortal() {
 
       const resData = await response.json();
       if (response.ok) {
-        alert(
-          `✅ Cotización enviada a ${clientName} (${clientEmail}).\n` +
-          (resData.simulated ? "[Simulado] Verifica los logs del servidor." : "[Enviado] Correo entregado correctamente.")
+        showToast(
+          "success",
+          `Cotización enviada a ${clientName} (${clientEmail}). ` +
+          (resData.simulated ? "[Simulado] Verifica los logs del servidor." : "Correo entregado correctamente.")
         );
         // Mark quote as Proceso after sending
         await updateQuoteStatus(q.id, "Proceso");
         await reloadCRMState();
       } else {
-        alert(`❌ Error al enviar: ${resData.error || "Error desconocido"}`);
+        showToast("error", `Error al enviar: ${resData.error || "Error desconocido"}`);
       }
     } catch (err) {
       console.error(err);
-      alert("Error de conexión al enviar el correo.");
+      showToast("error", "Error de conexión al enviar el correo.");
     }
   };
 
@@ -457,19 +495,19 @@ export function AdminPortal() {
         });
 
         const resData = await response.json();
-        
+
         if (response.ok) {
-          alert(`Correo de confirmación enviado a ${lead.name} (${lead.email}).\n${resData.simulated || resData.mocked ? "[Simulado] Detalles impresos en logs del servidor." : "[Enviado] Correo entregado."}`);
-          
+          showToast("success", `Correo de confirmación enviado a ${lead.name} (${lead.email}). ${resData.simulated || resData.mocked ? "[Simulado] Detalles impresos en logs del servidor." : "Correo entregado."}`);
+
           // Update lead status to Contactado in Supabase
           await updateLead({ ...lead, status: "Contactado" as const });
           await reloadCRMState();
         } else {
-          alert(`Error al enviar correo: ${resData.error || "Error desconocido"}`);
+          showToast("error", `Error al enviar correo: ${resData.error || "Error desconocido"}`);
         }
       } catch (err) {
         console.error(err);
-        alert("Error de conexión al enviar el correo.");
+        showToast("error", "Error de conexión al enviar el correo.");
       }
     }
   };
@@ -478,7 +516,7 @@ export function AdminPortal() {
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
     await saveCRMConfig(config);
-    alert("Configuración comercial actualizada correctamente.");
+    showToast("success", "Configuración comercial actualizada correctamente.");
   };
 
   if (!isOpen) return null;
@@ -590,14 +628,16 @@ export function AdminPortal() {
           </button>
           <button
             onClick={handleLogout}
+            aria-label="Cerrar Sesión"
             className="flex items-center gap-1 px-2.5 py-1.5 rounded bg-red-500/10 border border-red-500/20 hover:bg-red-500/25 text-red-400 hover:text-white transition-all text-[11px] md:text-xs font-semibold"
           >
             <LogOut className="w-3 h-3" /> <span className="hidden sm:inline">Cerrar Sesión</span>
           </button>
-          <button 
+          <button
             onClick={() => setIsOpen(false)}
             className="p-1.5 rounded bg-white/5 border border-white/10 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
             title="Cerrar Panel"
+            aria-label="Cerrar Panel"
           >
             <X className="w-5 h-5" />
           </button>
@@ -819,24 +859,27 @@ export function AdminPortal() {
                               </div>
                             </td>
                             <td className="p-4 text-right space-x-2">
-                              <button 
+                              <button
                                 onClick={() => setEditingLead(lead)}
                                 title="Editar Estado"
+                                aria-label={`Editar estado de ${lead.name}`}
                                 className="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-yellow-400 hover:text-white transition-colors"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleCreateQuoteFromLead(lead)}
                                 title="Cotizar Solicitud"
+                                aria-label={`Cotizar solicitud de ${lead.name}`}
                                 className="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-green-400 hover:text-white transition-colors"
                               >
                                 <DollarSign className="w-4 h-4" />
                               </button>
 
-                              <button 
+                              <button
                                 onClick={() => handleDeleteLead(lead.id)}
                                 title="Eliminar Lead"
+                                aria-label={`Eliminar lead de ${lead.name}`}
                                 className="p-1.5 rounded bg-white/5 hover:bg-red-500/20 border border-white/10 text-red-400 hover:text-white transition-colors"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -917,30 +960,34 @@ export function AdminPortal() {
                             </td>
                             <td className="p-4 text-gray-500 text-xs">{new Date(q.createdAt).toLocaleDateString("es-CO")}</td>
                             <td className="p-4 text-right space-x-2">
-                              <button 
+                              <button
                                 onClick={() => handleStartEditQuote(q)}
                                 title="Editar"
+                                aria-label={`Editar cotización de ${q.client}`}
                                 className="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-yellow-400 hover:text-white transition-colors"
                               >
                                 <Edit2 className="w-4 h-4" />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleSendEmailSimulation(q)}
                                 title="Enviar Correo"
+                                aria-label={`Enviar cotización por correo a ${q.client}`}
                                 className="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-blue-400 hover:text-white transition-colors"
                               >
                                 <Mail className="w-4 h-4" />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => setPreviewingQuote(q)}
                                 title="Ver / Imprimir Presupuesto"
+                                aria-label={`Ver o imprimir presupuesto de ${q.client}`}
                                 className="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-sinflow-secondary hover:text-white transition-colors"
                               >
                                 <Eye className="w-4 h-4" />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleDeleteQuote(q.id)}
                                 title="Eliminar"
+                                aria-label={`Eliminar cotización de ${q.client}`}
                                 className="p-1.5 rounded bg-white/5 hover:bg-red-500/20 border border-white/10 text-red-400 hover:text-white transition-colors"
                               >
                                 <Trash2 className="w-4 h-4" />
@@ -1026,6 +1073,8 @@ export function AdminPortal() {
                         </button>
                         <button
                           onClick={() => handleDeleteTestimonial(t.id)}
+                          title="Eliminar"
+                          aria-label={`Eliminar opinión de ${t.author}`}
                           className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-all"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -1166,9 +1215,10 @@ export function AdminPortal() {
           >
             <div className="flex justify-between items-center">
               <h3 className="text-xl font-bold text-white">Editar Solicitud</h3>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setEditingLead(null)}
+                aria-label="Cerrar"
                 className="text-gray-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
@@ -1240,13 +1290,14 @@ export function AdminPortal() {
               <h3 className="text-xl font-bold text-white">
                 {editingQuote ? "Editar Cotización" : "Generar Presupuesto Comercial"}
               </h3>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => {
                   setIsQuoteModalOpen(false);
                   setEditingQuote(null);
                   setSelectedLeadForQuote("");
                 }}
+                aria-label="Cerrar"
                 className="text-gray-400 hover:text-white"
               >
                 <X className="w-5 h-5" />
@@ -1462,14 +1513,16 @@ export function AdminPortal() {
                 Presupuesto Comercial
               </h3>
               <div className="flex items-center gap-2">
-                <button 
+                <button
                   onClick={() => window.print()}
+                  aria-label="Imprimir presupuesto"
                   className="px-4 py-2 rounded-lg bg-sinflow-accent text-white font-bold flex items-center gap-2 hover:opacity-95"
                 >
                   <Printer className="w-4 h-4" /> Imprimir
                 </button>
-                <button 
+                <button
                   onClick={() => setPreviewingQuote(null)}
+                  aria-label="Cerrar"
                   className="p-2 rounded-lg bg-gray-100 border border-gray-200 text-gray-500 hover:text-gray-900"
                 >
                   <X className="w-5 h-5" />
@@ -1628,6 +1681,68 @@ export function AdminPortal() {
 
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* --- CONFIRMATION DIALOG (replaces native confirm()) --- */}
+      {confirmDialog && (
+        <div className="fixed inset-0 z-[10002] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-white/10 rounded-3xl p-8 max-w-sm w-full space-y-6 animate-zoomIn">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">{confirmDialog.title}</h3>
+                <p className="text-sm text-gray-400 mt-1">{confirmDialog.message}</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setConfirmDialog(null)}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-gray-300 bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => confirmDialog.onConfirm()}
+                className="px-4 py-2 rounded-xl text-sm font-semibold text-white bg-red-500/90 hover:bg-red-500 transition-colors"
+              >
+                {confirmDialog.confirmLabel || "Confirmar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- TOAST NOTIFICATION (replaces native alert()) --- */}
+      {toast && (
+        <div className="fixed bottom-20 md:bottom-6 left-4 right-4 md:left-auto md:right-6 md:max-w-sm z-[10002]">
+          <div
+            role="status"
+            className={`flex items-start gap-3 px-4 py-3 rounded-2xl border shadow-2xl backdrop-blur-md ${
+              toast.type === "success"
+                ? "bg-green-500/10 border-green-500/30 text-green-300"
+                : "bg-red-500/10 border-red-500/30 text-red-300"
+            }`}
+          >
+            {toast.type === "success" ? (
+              <Check className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+            )}
+            <p className="text-sm leading-snug">{toast.message}</p>
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              aria-label="Cerrar notificación"
+              className="ml-auto text-current opacity-60 hover:opacity-100 flex-shrink-0"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
