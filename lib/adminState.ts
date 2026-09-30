@@ -32,10 +32,11 @@ export interface Quote {
   tax: number;
   taxAmount: number;
   total: number;
-  paymentType: "unico" | "diferido";
+  paymentType: "unico" | "diferido" | "suscripcion";
   installments: number;
   downPayment: number;
   installmentAmount: number;
+  projectLink: string;
   status: "Pendiente" | "Proceso" | "Completado";
   createdAt: string;
 }
@@ -172,6 +173,7 @@ const mapDbQuote = (db: Record<string, unknown>): Quote => {
     installments: db.installments != null ? Number(db.installments) : 1,
     downPayment: db.down_payment != null ? Number(db.down_payment) : 0,
     installmentAmount: db.installment_amount != null ? Number(db.installment_amount) : 0,
+    projectLink: (db.project_link as string) || "",
     status: db.status as Quote["status"],
     createdAt: (db.created_at || db.createdAt) as string,
   };
