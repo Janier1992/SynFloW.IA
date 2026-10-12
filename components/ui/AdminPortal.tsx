@@ -3,13 +3,13 @@
 import { useEffect, useState } from "react";
 import {
   X, Users, DollarSign, Star, FileText, Settings, Plus,
-  Trash2, Edit2, Mail, Eye, Check,
+  Trash2, Edit2, Mail, Eye, Check, Send, UserPlus,
   Activity, Printer, AlertCircle, LogOut, CornerUpLeft
 } from "lucide-react";
-import { 
-  getLeads, getQuotes, getTestimonials, 
-  getCRMConfig, saveCRMConfig, Lead, Quote, 
-  Testimonial, CRMConfig, addQuote, deleteLead, deleteQuote, 
+import {
+  getLeads, getQuotes, getTestimonials,
+  getCRMConfig, saveCRMConfig, Lead, Quote,
+  Testimonial, CRMConfig, addQuote, addLead, deleteLead, deleteQuote,
   toggleTestimonialApproval, deleteTestimonial, verifyAdminCredentials,
   updateLead, updateQuote, updateLeadStatus, updateQuoteStatus, clearLocalCRMCache,
   clearAdminToken, getLeadEmail
@@ -39,6 +39,26 @@ export function AdminPortal() {
   const [editingQuote, setEditingQuote] = useState<Quote | null>(null);
   const [selectedLeadForQuote, setSelectedLeadForQuote] = useState<string>("");
   const [previewingQuote, setPreviewingQuote] = useState<Quote | null>(null);
+
+  // Manual lead capture (before the public landing page form is used)
+  const [isNewLeadModalOpen, setIsNewLeadModalOpen] = useState(false);
+  const [newLeadForm, setNewLeadForm] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    company: "",
+    service: "Consultoría e Inteligencia Artificial",
+    description: "",
+  });
+
+  // Initial approach email (no pricing) sent directly from a lead
+  const [approachLead, setApproachLead] = useState<Lead | null>(null);
+  const [approachForm, setApproachForm] = useState({
+    subject: "Propuesta de Acercamiento Inicial - SynFlow IA",
+    message: "",
+    links: [] as { label: string; url: string }[],
+  });
+  const [isSendingApproach, setIsSendingApproach] = useState(false);
 
   // Styled replacements for native confirm()/alert() dialogs, to stay consistent with the dark "glass" theme
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -531,6 +551,106 @@ export function AdminPortal() {
     }
   };
 
+  // Open the manual lead-capture modal with a blank form
+  const handleOpenNewLeadModal = () => {
+    setNewLeadForm({
+      name: "",
+      email: "",
+      phone: "",
+      company: "",
+      service: "Consultoría e Inteligencia Artificial",
+      description: "",
+    });
+    setIsNewLeadModalOpen(true);
+  };
+
+  // Create a lead captured directly by the admin (e.g. from a call or in-person contact),
+  // before the client ever fills out the public landing page form
+  const handleCreateLead = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const created = await addLead({
+      name: newLeadForm.name,
+      email: newLeadForm.email,
+      phone: newLeadForm.phone,
+      company: newLeadForm.company || undefined,
+      service: newLeadForm.service,
+      description: newLeadForm.description,
+    });
+    if (created) {
+      showToast("success", `Lead de ${newLeadForm.name} creado correctamente.`);
+      setIsNewLeadModalOpen(false);
+      await reloadCRMState();
+    } else {
+      showToast("error", "No se pudo crear el lead. Intenta de nuevo.");
+    }
+  };
+
+  // Open the "Propuesta de Acercamiento Inicial" composer for a lead — a first-touch
+  // email with no pricing, distinct from the priced commercial quote flow
+  const handleOpenApproachModal = (lead: Lead) => {
+    setApproachLead(lead);
+    setApproachForm({
+      subject: "Propuesta de Acercamiento Inicial - SynFlow IA",
+      message: `Hola ${lead.name},\n\nGracias por tu interés en SynFlow IA. Queremos compartirte un primer acercamiento a lo que podemos construir juntos para ${lead.company || "tu negocio"}, antes de entrar en detalles comerciales.\n\n`,
+      links: [],
+    });
+  };
+
+  const handleAddApproachLink = () => {
+    setApproachForm({ ...approachForm, links: [...approachForm.links, { label: "", url: "" }] });
+  };
+
+  const handleRemoveApproachLink = (index: number) => {
+    setApproachForm({ ...approachForm, links: approachForm.links.filter((_, i) => i !== index) });
+  };
+
+  const handleApproachLinkChange = (index: number, field: "label" | "url", value: string) => {
+    const links = approachForm.links.map((l, i) => (i === index ? { ...l, [field]: value } : l));
+    setApproachForm({ ...approachForm, links });
+  };
+
+  const handleSendApproach = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!approachLead) return;
+    setIsSendingApproach(true);
+    try {
+      const validLinks = approachForm.links.filter((l) => l.url.trim());
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "lead_approach",
+          to: approachLead.email,
+          data: {
+            name: approachLead.name,
+            company: approachLead.company,
+            subject: approachForm.subject,
+            message: approachForm.message,
+            links: validLinks,
+          },
+        }),
+      });
+      const resData = await response.json();
+      if (response.ok) {
+        showToast(
+          "success",
+          `Propuesta inicial enviada a ${approachLead.name} (${approachLead.email}). ` +
+          (resData.simulated ? "[Simulado] Verifica los logs del servidor." : "Correo entregado correctamente.")
+        );
+        await updateLead({ ...approachLead, status: "Contactado" as const });
+        setApproachLead(null);
+        await reloadCRMState();
+      } else {
+        showToast("error", `Error al enviar: ${resData.error || "Error desconocido"}`);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("error", "Error de conexión al enviar el correo.");
+    } finally {
+      setIsSendingApproach(false);
+    }
+  };
+
   // Handle config save
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -814,8 +934,14 @@ export function AdminPortal() {
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-gray-950/20">
                   <div>
                     <h2 className="text-lg font-bold text-white">Solicitudes de Clientes (Leads)</h2>
-                    <p className="text-xs text-gray-400">Prospectos interesados que completaron el formulario web</p>
+                    <p className="text-xs text-gray-400">Prospectos interesados que completaron el formulario web o que capturaste manualmente</p>
                   </div>
+                  <button
+                    onClick={handleOpenNewLeadModal}
+                    className="px-4 py-2.5 bg-sinflow-secondary hover:bg-sinflow-secondary/90 text-sinflow-primary font-bold rounded-xl flex items-center gap-2 transition-all text-sm flex-shrink-0"
+                  >
+                    <UserPlus className="w-4 h-4" /> Agregar Lead
+                  </button>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -893,6 +1019,14 @@ export function AdminPortal() {
                                 className="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-green-400 hover:text-white transition-colors"
                               >
                                 <DollarSign className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleOpenApproachModal(lead)}
+                                title="Enviar Propuesta Inicial"
+                                aria-label={`Enviar propuesta inicial a ${lead.name}`}
+                                className="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-blue-400 hover:text-white transition-colors"
+                              >
+                                <Send className="w-4 h-4" />
                               </button>
 
                               <button
@@ -1298,6 +1432,107 @@ export function AdminPortal() {
             >
               Guardar Cambios
             </button>
+          </form>
+        </div>
+      )}
+
+      {/* --- NEW LEAD MODAL (manual capture, before the public form is used) --- */}
+      {isNewLeadModalOpen && (
+        <div className="fixed inset-0 z-[10000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <form
+            onSubmit={handleCreateLead}
+            className="bg-gray-900 border border-white/10 rounded-3xl max-w-md w-full max-h-[90vh] flex flex-col animate-zoomIn"
+          >
+            <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0 border-b border-white/5">
+              <h3 className="text-xl font-bold text-white">Agregar Lead Manualmente</h3>
+              <button
+                type="button"
+                onClick={() => setIsNewLeadModalOpen(false)}
+                aria-label="Cerrar"
+                className="text-gray-400 hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 p-6 overflow-y-auto">
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Nombre Completo</label>
+                <input
+                  type="text"
+                  required
+                  value={newLeadForm.name}
+                  onChange={(e) => setNewLeadForm({ ...newLeadForm, name: e.target.value })}
+                  placeholder="Ej. Juan Pérez"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Correo Electrónico</label>
+                <input
+                  type="email"
+                  required
+                  value={newLeadForm.email}
+                  onChange={(e) => setNewLeadForm({ ...newLeadForm, email: e.target.value })}
+                  className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Teléfono / Celular</label>
+                <input
+                  type="tel"
+                  required
+                  value={newLeadForm.phone}
+                  onChange={(e) => setNewLeadForm({ ...newLeadForm, phone: e.target.value })}
+                  placeholder="+57 300 000 0000"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Empresa / Negocio (opcional)</label>
+                <input
+                  type="text"
+                  value={newLeadForm.company}
+                  onChange={(e) => setNewLeadForm({ ...newLeadForm, company: e.target.value })}
+                  className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white focus:outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Servicio de Interés</label>
+                <select
+                  value={newLeadForm.service}
+                  onChange={(e) => setNewLeadForm({ ...newLeadForm, service: e.target.value })}
+                  className="w-full bg-gray-850 border border-white/10 rounded-xl p-3 text-white cursor-pointer [&>option]:bg-gray-900"
+                >
+                  <option value="Consultoría e Inteligencia Artificial">Consultoría e Inteligencia Artificial</option>
+                  <option value="Automatización (RPA & IA)">Automatización Inteligente</option>
+                  <option value="Analítica de Datos & BI">Analítica de Datos & BI</option>
+                  <option value="Desarrollo a Medida">Desarrollo de Software / Apps Web</option>
+                  <option value="Desarrollo de Agentes y Chatbots">Agentes Inteligentes y Chatbots</option>
+                  <option value="Otro / Contacto General">Otro / Contacto General</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Descripción / Contexto</label>
+                <textarea
+                  rows={3}
+                  required
+                  value={newLeadForm.description}
+                  onChange={(e) => setNewLeadForm({ ...newLeadForm, description: e.target.value })}
+                  placeholder="Ej. Contacto captado en evento de networking, interesado en automatizar su proceso de facturación."
+                  className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white text-sm placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="p-6 pt-4 flex-shrink-0 border-t border-white/5">
+              <button
+                type="submit"
+                className="w-full py-3.5 bg-sinflow-secondary text-sinflow-primary font-bold rounded-xl hover:opacity-95"
+              >
+                Crear Lead
+              </button>
+            </div>
           </form>
         </div>
       )}
@@ -1786,6 +2021,125 @@ export function AdminPortal() {
             </div>
 
           </div>
+        </div>
+      )}
+
+      {/* --- INITIAL APPROACH MODAL (no pricing — first-touch email from a lead) --- */}
+      {approachLead && (
+        <div className="fixed inset-0 z-[10000] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <form
+            onSubmit={handleSendApproach}
+            className="bg-gray-900 border border-white/10 rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col animate-zoomIn"
+          >
+            <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0 border-b border-white/5">
+              <div>
+                <h3 className="text-xl font-bold text-white">Propuesta de Acercamiento Inicial</h3>
+                <p className="text-xs text-gray-400 mt-1">Para: {approachLead.name} ({approachLead.email})</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setApproachLead(null)}
+                aria-label="Cerrar"
+                className="text-gray-400 hover:text-white flex-shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4 p-6 overflow-y-auto">
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-xl p-3">
+                <p className="text-[11px] text-blue-300">
+                  Este correo no incluye precios ni cotización — es un primer acercamiento para abrir la conversación comercial más adelante.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Asunto</label>
+                <input
+                  type="text"
+                  required
+                  value={approachForm.subject}
+                  onChange={(e) => setApproachForm({ ...approachForm, subject: e.target.value })}
+                  className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-400 mb-1">Mensaje</label>
+                <textarea
+                  rows={7}
+                  required
+                  value={approachForm.message}
+                  onChange={(e) => setApproachForm({ ...approachForm, message: e.target.value })}
+                  className="w-full bg-black/30 border border-white/10 rounded-xl p-3 text-white text-sm focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 resize-none"
+                />
+                <p className="text-[10px] text-gray-500 mt-1">
+                  Este texto es el cuerpo del correo que recibirá el cliente, tal cual lo escribas.
+                </p>
+              </div>
+
+              <div className="border-t border-white/10 pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs uppercase tracking-wider text-gray-500 font-bold">Links (opcional)</h4>
+                  <button
+                    type="button"
+                    onClick={handleAddApproachLink}
+                    className="text-[11px] font-semibold text-sinflow-secondary hover:underline flex items-center gap-1"
+                  >
+                    <Plus className="w-3 h-3" /> Agregar link
+                  </button>
+                </div>
+
+                {approachForm.links.length === 0 ? (
+                  <p className="text-[11px] text-gray-500">
+                    Sin links agregados. Útil si ya tienes una landing, prototipo o portafolio que mostrar.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {approachForm.links.map((link, i) => (
+                      <div key={i} className="flex gap-2 items-start">
+                        <input
+                          type="text"
+                          placeholder="Etiqueta (ej. Landing de ejemplo)"
+                          value={link.label}
+                          onChange={(e) => handleApproachLinkChange(i, "label", e.target.value)}
+                          className="w-1/3 bg-black/30 border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none"
+                        />
+                        <input
+                          type="url"
+                          placeholder="https://..."
+                          value={link.url}
+                          onChange={(e) => handleApproachLinkChange(i, "url", e.target.value)}
+                          className="flex-1 bg-black/30 border border-white/10 rounded-xl p-2.5 text-white text-xs focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveApproachLink(i)}
+                          aria-label="Quitar link"
+                          className="p-2 text-gray-500 hover:text-red-400 flex-shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <p className="text-[10px] text-gray-500 mt-2">
+                  Cada link se enviará como botón clicable en el correo y en el PDF adjunto.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 pt-4 flex-shrink-0 border-t border-white/5">
+              <button
+                type="submit"
+                disabled={isSendingApproach}
+                className="w-full py-3.5 bg-sinflow-secondary text-sinflow-primary font-bold rounded-xl hover:opacity-95 disabled:opacity-50"
+              >
+                {isSendingApproach ? "Enviando..." : "Enviar Propuesta Inicial"}
+              </button>
+            </div>
+          </form>
         </div>
       )}
 

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import nodemailer from "nodemailer";
 import { generateQuotePdfBuffer } from "@/lib/quotePdf";
+import { generateApproachPdfBuffer } from "@/lib/approachPdf";
 
 // Type definitions for the payload
 interface EmailRequest {
-  type: "new_lead" | "client_confirm" | "quote_approved" | "admin_register";
+  type: "new_lead" | "client_confirm" | "quote_approved" | "admin_register" | "lead_approach";
   to: string;
   data: {
     id?: string;
@@ -32,6 +33,9 @@ interface EmailRequest {
     installments?: number;
     downPayment?: number;
     installmentAmount?: number;
+    subject?: string;
+    message?: string;
+    links?: { label: string; url: string }[];
   };
 }
 
@@ -424,6 +428,61 @@ const getAdminRegisterHtml = (data: { name: string; email: string }, siteUrl: st
 </html>
 `;
 
+// 5. HTML Template for the "Propuesta de Acercamiento Inicial" — a first-touch
+// email sent directly from a lead in the CRM. Deliberately carries NO pricing:
+// just the admin's free-text message and optional reference links.
+const getLeadApproachHtml = (data: {
+  name: string;
+  message: string;
+  links: { label: string; url: string }[];
+}) => {
+  const linksHtml = data.links.length
+    ? `
+      <div style="margin: 25px 0;">
+        <p style="font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; margin: 0 0 10px 0;">Enlaces de referencia</p>
+        ${data.links.map((link) => `
+        <div style="text-align: center; margin: 10px 0;">
+          <a href="${escapeHtml(link.url)}" style="display: inline-block; background-color: #F1F5F9; color: #7B5CFF; font-weight: bold; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-size: 13px; border: 1px solid #E2E8F0;">${escapeHtml(link.label.trim() || link.url)} →</a>
+        </div>`).join("")}
+      </div>
+    `
+    : "";
+
+  return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <style>
+    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #F8FAFC; color: #334155; margin: 0; padding: 0; }
+    .container { max-width: 600px; margin: 30px auto; background-color: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
+    .header { background: linear-gradient(135deg, #0A0F1C 0%, #1E293B 100%); padding: 40px 30px; text-align: center; }
+    .header h1 { margin: 0; color: #00E0FF; font-size: 26px; font-weight: bold; letter-spacing: -0.5px; }
+    .content { padding: 35px 30px; line-height: 1.6; }
+    .footer { text-align: center; padding: 20px; background-color: #0A0F1C; font-size: 11px; color: #94A3B8; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>SynFlow IA</h1>
+    </div>
+    <div class="content">
+      <p style="font-size: 15px; color: #334155; white-space: pre-line; margin: 0;">${escapeHtml(data.message)}</p>
+      ${linksHtml}
+      <p style="margin-top: 30px; margin-bottom: 0; font-size: 13px; color: #94A3B8;">📎 Adjunto a este correo encontrarás este mismo mensaje en PDF, listo para descargar o compartir.</p>
+    </div>
+    <div class="footer">
+      SynFlow IA • Inteligencia Artificial y Automatización en Medellín<br>
+      Este es un acercamiento inicial, sin compromiso comercial.<br>
+      © ${new Date().getFullYear()} SynFlow IA. Todos los derechos reservados.
+    </div>
+  </div>
+</body>
+</html>
+`;
+};
+
 export async function POST(req: Request) {
   try {
     const body: EmailRequest = await req.json();
@@ -496,6 +555,32 @@ export async function POST(req: Request) {
         subject = "🔑 Acceso Autorizado al CRM - SynFlow IA";
         htmlContent = getAdminRegisterHtml(data as { name: string; email: string; }, siteUrl);
         break;
+      case "lead_approach": {
+        const approachData = data as {
+          name: string;
+          company?: string;
+          subject?: string;
+          message: string;
+          links?: { label: string; url: string }[];
+        };
+        subject = approachData.subject || "Propuesta de Acercamiento Inicial - SynFlow IA";
+        const links = approachData.links || [];
+        htmlContent = getLeadApproachHtml({ name: approachData.name, message: approachData.message, links });
+
+        const pdfBuffer = await generateApproachPdfBuffer({
+          leadName: approachData.name,
+          company: approachData.company,
+          createdAt: new Date().toISOString(),
+          message: approachData.message,
+          links,
+        });
+        pdfAttachment = {
+          filename: `Acercamiento-SynFlowIA-${approachData.name.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 30)}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        };
+        break;
+      }
       default:
         return NextResponse.json({ error: "Tipo de correo inválido" }, { status: 400 });
     }
