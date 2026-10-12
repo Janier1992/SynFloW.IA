@@ -1243,40 +1243,41 @@ export function AdminPortal() {
                                 ))}
                               </div>
                             </td>
-                            <td className="p-4 text-right space-x-2">
-                              <button
-                                onClick={() => setEditingLead(lead)}
-                                title="Editar Estado"
-                                aria-label={`Editar estado de ${lead.name}`}
-                                className="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-yellow-400 hover:text-white transition-colors"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleCreateQuoteFromLead(lead)}
-                                title="Cotizar Solicitud"
-                                aria-label={`Cotizar solicitud de ${lead.name}`}
-                                className="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-green-400 hover:text-white transition-colors"
-                              >
-                                <DollarSign className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleOpenApproachModal(lead)}
-                                title="Enviar Propuesta Inicial"
-                                aria-label={`Enviar propuesta inicial a ${lead.name}`}
-                                className="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-blue-400 hover:text-white transition-colors"
-                              >
-                                <Send className="w-4 h-4" />
-                              </button>
-
-                              <button
-                                onClick={() => handleDeleteLead(lead.id)}
-                                title="Eliminar Lead"
-                                aria-label={`Eliminar lead de ${lead.name}`}
-                                className="p-1.5 rounded bg-white/5 hover:bg-red-500/20 border border-white/10 text-red-400 hover:text-white transition-colors"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
+                            <td className="p-4">
+                              <div className="flex items-center justify-end gap-1.5 flex-wrap">
+                                <button
+                                  onClick={() => setEditingLead(lead)}
+                                  title="Editar Estado"
+                                  aria-label={`Editar estado de ${lead.name}`}
+                                  className="p-1.5 rounded bg-white/5 hover:bg-white/10 border border-white/10 text-yellow-400 hover:text-white transition-colors"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleOpenApproachModal(lead)}
+                                  title="Acercamiento inicial — sin precios, sin PDF por defecto"
+                                  aria-label={`Enviar acercamiento inicial a ${lead.name}, sin precios`}
+                                  className="px-2.5 py-1.5 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-300 hover:text-white transition-colors flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap"
+                                >
+                                  <Send className="w-3.5 h-3.5" /> Acercamiento
+                                </button>
+                                <button
+                                  onClick={() => handleCreateQuoteFromLead(lead)}
+                                  title="Cotizar Solicitud — propuesta comercial con precios y PDF"
+                                  aria-label={`Cotizar solicitud de ${lead.name}, con precios`}
+                                  className="px-2.5 py-1.5 rounded bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 text-green-300 hover:text-white transition-colors flex items-center gap-1.5 text-[11px] font-semibold whitespace-nowrap"
+                                >
+                                  <DollarSign className="w-3.5 h-3.5" /> Cotizar
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteLead(lead.id)}
+                                  title="Eliminar Lead"
+                                  aria-label={`Eliminar lead de ${lead.name}`}
+                                  className="p-1.5 rounded bg-white/5 hover:bg-red-500/20 border border-white/10 text-red-400 hover:text-white transition-colors"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         ));
