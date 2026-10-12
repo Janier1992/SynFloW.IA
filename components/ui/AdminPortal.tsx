@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   X, Users, DollarSign, Star, FileText, Settings, Plus,
-  Trash2, Edit2, Mail, Eye, Check, Send, UserPlus,
+  Trash2, Edit2, Mail, Eye, EyeOff, Check, Send, UserPlus,
   Activity, Printer, AlertCircle, LogOut, CornerUpLeft
 } from "lucide-react";
 import {
@@ -14,6 +14,7 @@ import {
   updateLead, updateQuote, updateLeadStatus, updateQuoteStatus, clearLocalCRMCache,
   clearAdminToken, getLeadEmail
 } from "@/lib/adminState";
+import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 
 export function AdminPortal() {
@@ -106,6 +107,82 @@ export function AdminPortal() {
   const [loginPassword, setLoginPassword] = useState("");
   const [loginError, setLoginError] = useState("");
   const [isSubmittingAuth, setIsSubmittingAuth] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+
+  // "Olvidé mi contraseña" — sends a Supabase Auth recovery email
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
+
+  // True once the admin arrives here via the link from the recovery email
+  const [isPasswordRecovery, setIsPasswordRecovery] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  // Supabase redirects back here with a recovery token in the URL; its client
+  // detects it automatically and fires this event once the recovery session is ready
+  useEffect(() => {
+    if (!supabase) return;
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setIsPasswordRecovery(true);
+        setIsOpen(true);
+      }
+    });
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  const handleRequestPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) {
+      showToast("error", "Supabase no está configurado en este entorno.");
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(forgotPasswordEmail, {
+        redirectTo: typeof window !== "undefined" ? window.location.origin : undefined,
+      });
+      if (error) {
+        showToast("error", error.message);
+      } else {
+        setResetEmailSent(true);
+      }
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) return;
+    if (newPassword.length < 6) {
+      showToast("error", "La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      showToast("error", "Las contraseñas no coinciden.");
+      return;
+    }
+    setIsUpdatingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) {
+        showToast("error", error.message);
+      } else {
+        showToast("success", "Contraseña actualizada. Ya puedes iniciar sesión con tu nueva contraseña.");
+        await supabase.auth.signOut();
+        setIsPasswordRecovery(false);
+        setNewPassword("");
+        setConfirmNewPassword("");
+      }
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -660,7 +737,145 @@ export function AdminPortal() {
 
   if (!isOpen) return null;
 
+  // Reached via the link from the Supabase recovery email — show the
+  // "set a new password" form regardless of normal login state
+  if (isPasswordRecovery) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-[#0A0F1C]/98 backdrop-blur-lg text-sinflow-text-light flex items-center justify-center font-sans overflow-hidden">
+        <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10 [mask-image:radial-gradient(ellipse_at_center,white,transparent)]" />
+        <div className="absolute top-[20%] -left-[10%] w-[40%] h-[40%] bg-sinflow-secondary/15 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-[20%] -right-[10%] w-[40%] h-[40%] bg-sinflow-accent/15 rounded-full blur-[100px] pointer-events-none" />
+
+        <div className="relative max-w-md w-full mx-4 bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md shadow-2xl space-y-6">
+          <div className="text-center">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sinflow-secondary to-sinflow-accent flex items-center justify-center mx-auto mb-4 shadow-lg shadow-sinflow-secondary/20">
+              <Settings className="w-6 h-6 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-white tracking-tight">Definir Nueva Contraseña</h2>
+            <p className="text-xs text-gray-400 mt-1.5">Escribe la nueva contraseña para tu cuenta de administrador</p>
+          </div>
+
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 mb-1.5">Nueva Contraseña</label>
+              <div className="relative">
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  placeholder="Mínimo 6 caracteres"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all text-sm font-sans"
+                  disabled={isUpdatingPassword}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  aria-label={showNewPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                >
+                  {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-400 mb-1.5">Confirmar Contraseña</label>
+              <input
+                type={showNewPassword ? "text" : "password"}
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all text-sm font-sans"
+                disabled={isUpdatingPassword}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isUpdatingPassword}
+              className="w-full py-3.5 bg-gradient-to-r from-sinflow-secondary to-sinflow-accent text-white font-bold rounded-xl hover:opacity-95 transition-all text-sm shadow-md disabled:opacity-50"
+            >
+              {isUpdatingPassword ? "Actualizando..." : "Guardar Nueva Contraseña"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   if (!isLoggedIn) {
+    // "Olvidé mi contraseña" — request a Supabase recovery email
+    if (isForgotPasswordOpen) {
+      return (
+        <div className="fixed inset-0 z-[9999] bg-[#0A0F1C]/98 backdrop-blur-lg text-sinflow-text-light flex items-center justify-center font-sans overflow-hidden">
+          <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10 [mask-image:radial-gradient(ellipse_at_center,white,transparent)]" />
+          <div className="absolute top-[20%] -left-[10%] w-[40%] h-[40%] bg-sinflow-secondary/15 rounded-full blur-[100px] pointer-events-none" />
+          <div className="absolute bottom-[20%] -right-[10%] w-[40%] h-[40%] bg-sinflow-accent/15 rounded-full blur-[100px] pointer-events-none" />
+
+          <div className="relative max-w-md w-full mx-4 bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md shadow-2xl space-y-6">
+            <div className="text-center">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sinflow-secondary to-sinflow-accent flex items-center justify-center mx-auto mb-4 shadow-lg shadow-sinflow-secondary/20">
+                <Mail className="w-6 h-6 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-white tracking-tight">Recuperar Contraseña</h2>
+              <p className="text-xs text-gray-400 mt-1.5">Te enviaremos un link para definir una nueva contraseña</p>
+            </div>
+
+            {resetEmailSent ? (
+              <div className="text-center space-y-5">
+                <p className="text-sm text-gray-300 leading-relaxed">
+                  Si <strong className="text-white">{forgotPasswordEmail}</strong> está registrado como administrador, te llegará un correo con el link para definir una nueva contraseña.
+                </p>
+                <button
+                  onClick={() => {
+                    setIsForgotPasswordOpen(false);
+                    setResetEmailSent(false);
+                    setForgotPasswordEmail("");
+                  }}
+                  className="text-sinflow-secondary hover:underline text-sm font-semibold"
+                >
+                  Volver al inicio de sesión
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleRequestPasswordReset} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-400 mb-1.5">Correo Electrónico</label>
+                  <input
+                    type="email"
+                    value={forgotPasswordEmail}
+                    onChange={(e) => setForgotPasswordEmail(e.target.value)}
+                    required
+                    placeholder="admin@synflow.io"
+                    className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all text-sm font-sans"
+                    disabled={isSendingReset}
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSendingReset}
+                  className="w-full py-3.5 bg-gradient-to-r from-sinflow-secondary to-sinflow-accent text-white font-bold rounded-xl hover:opacity-95 transition-all text-sm shadow-md disabled:opacity-50"
+                >
+                  {isSendingReset ? "Enviando..." : "Enviar Link de Recuperación"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPasswordOpen(false)}
+                  className="w-full text-center text-xs text-gray-400 hover:text-white"
+                >
+                  Volver al inicio de sesión
+                </button>
+              </form>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="fixed inset-0 z-[9999] bg-[#0A0F1C]/98 backdrop-blur-lg text-sinflow-text-light flex items-center justify-center font-sans overflow-hidden">
         {/* Sleek background design */}
@@ -684,7 +899,7 @@ export function AdminPortal() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-gray-400 mb-1.5">Correo Electrónico</label>
-              <input 
+              <input
                 type="email"
                 value={loginEmail}
                 onChange={(e) => setLoginEmail(e.target.value)}
@@ -696,16 +911,38 @@ export function AdminPortal() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-gray-400 mb-1.5">Contraseña</label>
-              <input 
-                type="password"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                required
-                placeholder="••••••••"
-                className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all text-sm font-sans"
-                disabled={isSubmittingAuth}
-              />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-gray-400">Contraseña</label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setForgotPasswordEmail(loginEmail);
+                    setIsForgotPasswordOpen(true);
+                  }}
+                  className="text-[11px] text-sinflow-secondary hover:underline"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+              <div className="relative">
+                <input
+                  type={showLoginPassword ? "text" : "password"}
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  required
+                  placeholder="••••••••"
+                  className="w-full bg-black/30 border border-white/10 rounded-xl px-4 py-3 pr-11 text-white focus:outline-none focus:ring-2 focus:ring-sinflow-secondary/50 transition-all text-sm font-sans"
+                  disabled={isSubmittingAuth}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  aria-label={showLoginPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
+                >
+                  {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             {loginError && (
@@ -726,7 +963,7 @@ export function AdminPortal() {
 
           <div className="flex justify-between items-center text-[10px] text-gray-500 pt-4 border-t border-white/5">
             <span>SynFlow IA v1.0</span>
-            <button 
+            <button
               onClick={() => {
                 setIsOpen(false);
               }}
