@@ -36,6 +36,7 @@ interface EmailRequest {
     subject?: string;
     message?: string;
     links?: { label: string; url: string }[];
+    includePdf?: boolean;
   };
 }
 
@@ -435,6 +436,7 @@ const getLeadApproachHtml = (data: {
   name: string;
   message: string;
   links: { label: string; url: string }[];
+  includePdf: boolean;
 }) => {
   const linksHtml = data.links.length
     ? `
@@ -470,7 +472,7 @@ const getLeadApproachHtml = (data: {
     <div class="content">
       <p style="font-size: 15px; color: #334155; white-space: pre-line; margin: 0;">${escapeHtml(data.message)}</p>
       ${linksHtml}
-      <p style="margin-top: 30px; margin-bottom: 0; font-size: 13px; color: #94A3B8;">📎 Adjunto a este correo encontrarás este mismo mensaje en PDF, listo para descargar o compartir.</p>
+      ${data.includePdf ? `<p style="margin-top: 30px; margin-bottom: 0; font-size: 13px; color: #94A3B8;">📎 Adjunto a este correo encontrarás este mismo mensaje en PDF, listo para descargar o compartir.</p>` : ""}
     </div>
     <div class="footer">
       SynFlow IA • Inteligencia Artificial y Automatización en Medellín<br>
@@ -562,23 +564,29 @@ export async function POST(req: Request) {
           subject?: string;
           message: string;
           links?: { label: string; url: string }[];
+          includePdf?: boolean;
         };
         subject = approachData.subject || "Propuesta de Acercamiento Inicial - SynFlow IA";
         const links = approachData.links || [];
-        htmlContent = getLeadApproachHtml({ name: approachData.name, message: approachData.message, links });
+        const includePdf = !!approachData.includePdf;
+        htmlContent = getLeadApproachHtml({ name: approachData.name, message: approachData.message, links, includePdf });
 
-        const pdfBuffer = await generateApproachPdfBuffer({
-          leadName: approachData.name,
-          company: approachData.company,
-          createdAt: new Date().toISOString(),
-          message: approachData.message,
-          links,
-        });
-        pdfAttachment = {
-          filename: `Acercamiento-SynFlowIA-${approachData.name.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 30)}.pdf`,
-          content: pdfBuffer,
-          contentType: "application/pdf",
-        };
+        // This is a cold-outreach first touch, not a commercial quote — no PDF
+        // unless the admin explicitly asks for one via the "includePdf" checkbox.
+        if (includePdf) {
+          const pdfBuffer = await generateApproachPdfBuffer({
+            leadName: approachData.name,
+            company: approachData.company,
+            createdAt: new Date().toISOString(),
+            message: approachData.message,
+            links,
+          });
+          pdfAttachment = {
+            filename: `Acercamiento-SynFlowIA-${approachData.name.replace(/[^a-zA-Z0-9]+/g, "-").slice(0, 30)}.pdf`,
+            content: pdfBuffer,
+            contentType: "application/pdf",
+          };
+        }
         break;
       }
       default:
