@@ -58,6 +58,7 @@ export function AdminPortal() {
     subject: "Propuesta de Acercamiento Inicial - SynFlow IA",
     message: "",
     links: [] as { label: string; url: string }[],
+    includePdf: false,
   });
   const [isSendingApproach, setIsSendingApproach] = useState(false);
 
@@ -668,8 +669,9 @@ export function AdminPortal() {
     setApproachLead(lead);
     setApproachForm({
       subject: "Propuesta de Acercamiento Inicial - SynFlow IA",
-      message: `Hola ${lead.name},\n\nGracias por tu interés en SynFlow IA. Queremos compartirte un primer acercamiento a lo que podemos construir juntos para ${lead.company || "tu negocio"}, antes de entrar en detalles comerciales.\n\n`,
+      message: `Hola ${lead.name}, ¿qué tal?\n\nNos complace informarte que hemos visto tu negocio${lead.company ? ` (${lead.company})` : ""} y quisiéramos hacerte una propuesta.\n\nEn SynFlow IA ayudamos a empresas como la tuya a implementar soluciones de inteligencia artificial y automatización. Te compartimos un prototipo mínimo viable con el que puedes explorar la idea — si te interesa, con gusto conversamos más a fondo.\n\nQuedamos atentos a tus comentarios.`,
       links: [],
+      includePdf: false,
     });
   };
 
@@ -704,6 +706,7 @@ export function AdminPortal() {
             subject: approachForm.subject,
             message: approachForm.message,
             links: validLinks,
+            includePdf: approachForm.includePdf,
           },
         }),
       });
@@ -2362,8 +2365,25 @@ export function AdminPortal() {
                   </div>
                 )}
                 <p className="text-[10px] text-gray-500 mt-2">
-                  Cada link se enviará como botón clicable en el correo y en el PDF adjunto.
+                  Cada link se enviará como botón clicable en el cuerpo del correo.
                 </p>
+              </div>
+
+              <div className="border-t border-white/10 pt-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={approachForm.includePdf}
+                    onChange={(e) => setApproachForm({ ...approachForm, includePdf: e.target.checked })}
+                    className="mt-0.5 w-4 h-4 rounded border-white/20 bg-black/30 accent-sinflow-secondary cursor-pointer"
+                  />
+                  <span>
+                    <span className="block text-xs font-semibold text-gray-300">Adjuntar PDF con este mensaje</span>
+                    <span className="block text-[10px] text-gray-500 mt-0.5">
+                      Desmarcado por defecto — este es un primer acercamiento, no una cotización. Actívalo solo si quieres enviar el mensaje y los links también en un PDF descargable.
+                    </span>
+                  </span>
+                </label>
               </div>
             </div>
 
