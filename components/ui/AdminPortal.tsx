@@ -17,8 +17,10 @@ import {
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 
-// Keeps the base64-encoded PDF upload payload within typical serverless body size limits
-const MAX_APPROACH_PDF_BYTES = 3 * 1024 * 1024; // 3 MB
+// Keeps the base64-encoded PDF upload payload under Vercel's fixed ~4.5 MB serverless
+// request body cap (base64 inflates the raw file size by ~33%, so this is close to
+// the real ceiling, not an arbitrary choice)
+const MAX_APPROACH_PDF_BYTES = 3.2 * 1024 * 1024; // 3.2 MB
 
 export function AdminPortal() {
   const [isOpen, setIsOpen] = useState(false);
@@ -689,7 +691,7 @@ export function AdminPortal() {
       return;
     }
     if (file.size > MAX_APPROACH_PDF_BYTES) {
-      showToast("error", `El PDF no puede superar ${(MAX_APPROACH_PDF_BYTES / (1024 * 1024)).toFixed(0)} MB.`);
+      showToast("error", `El PDF no puede superar ${(MAX_APPROACH_PDF_BYTES / (1024 * 1024)).toFixed(1)} MB.`);
       e.target.value = "";
       return;
     }
@@ -2426,7 +2428,7 @@ export function AdminPortal() {
                 {approachForm.includePdf && (
                   <div className="ml-7 bg-black/20 border border-white/10 rounded-xl p-3 space-y-2">
                     <p className="text-[10px] text-gray-500">
-                      Sube tu propio PDF (por ejemplo, el prototipo o la propuesta comercial ya diseñada). Si no subes ninguno, se generará uno automáticamente con este mensaje y los links. Máximo {(MAX_APPROACH_PDF_BYTES / (1024 * 1024)).toFixed(0)} MB.
+                      Sube tu propio PDF (por ejemplo, el prototipo o la propuesta comercial ya diseñada). Si no subes ninguno, se generará uno automáticamente con este mensaje y los links. Máximo {(MAX_APPROACH_PDF_BYTES / (1024 * 1024)).toFixed(1)} MB.
                     </p>
                     {approachForm.pdfFile ? (
                       <div className="flex items-center justify-between gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
