@@ -17,6 +17,9 @@ import {
 import { supabase } from "@/lib/supabase";
 import Image from "next/image";
 
+// Keeps the base64-encoded PDF upload payload within typical serverless body size limits
+const MAX_APPROACH_PDF_BYTES = 3 * 1024 * 1024; // 3 MB
+
 export function AdminPortal() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "quotes" | "testimonials" | "config">("dashboard");
@@ -59,6 +62,7 @@ export function AdminPortal() {
     message: "",
     links: [] as { label: string; url: string }[],
     includePdf: false,
+    pdfFile: null as { filename: string; base64: string } | null,
   });
   const [isSendingApproach, setIsSendingApproach] = useState(false);
 
@@ -672,7 +676,36 @@ export function AdminPortal() {
       message: `Hola ${lead.name}, ¿qué tal?\n\nNos complace informarte que hemos visto tu negocio${lead.company ? ` (${lead.company})` : ""} y quisiéramos hacerte una propuesta.\n\nEn SynFlow IA ayudamos a empresas como la tuya a implementar soluciones de inteligencia artificial y automatización. Te compartimos un prototipo mínimo viable con el que puedes explorar la idea — si te interesa, con gusto conversamos más a fondo.\n\nQuedamos atentos a tus comentarios.`,
       links: [],
       includePdf: false,
+      pdfFile: null,
     });
+  };
+
+  const handleApproachPdfFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      showToast("error", "El archivo debe ser un PDF.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > MAX_APPROACH_PDF_BYTES) {
+      showToast("error", `El PDF no puede superar ${(MAX_APPROACH_PDF_BYTES / (1024 * 1024)).toFixed(0)} MB.`);
+      e.target.value = "";
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result as string;
+      const base64 = result.split(",")[1] || "";
+      setApproachForm((f) => ({ ...f, pdfFile: { filename: file.name, base64 } }));
+    };
+    reader.onerror = () => showToast("error", "No se pudo leer el archivo PDF.");
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleRemoveApproachPdfFile = () => {
+    setApproachForm((f) => ({ ...f, pdfFile: null }));
   };
 
   const handleAddApproachLink = () => {
@@ -707,6 +740,7 @@ export function AdminPortal() {
             message: approachForm.message,
             links: validLinks,
             includePdf: approachForm.includePdf,
+            pdfFile: approachForm.includePdf ? approachForm.pdfFile : null,
           },
         }),
       });
@@ -2370,21 +2404,52 @@ export function AdminPortal() {
                 </p>
               </div>
 
-              <div className="border-t border-white/10 pt-4">
+              <div className="border-t border-white/10 pt-4 space-y-3">
                 <label className="flex items-start gap-3 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={approachForm.includePdf}
-                    onChange={(e) => setApproachForm({ ...approachForm, includePdf: e.target.checked })}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setApproachForm((f) => ({ ...f, includePdf: checked, pdfFile: checked ? f.pdfFile : null }));
+                    }}
                     className="mt-0.5 w-4 h-4 rounded border-white/20 bg-black/30 accent-sinflow-secondary cursor-pointer"
                   />
                   <span>
                     <span className="block text-xs font-semibold text-gray-300">Adjuntar PDF con este mensaje</span>
                     <span className="block text-[10px] text-gray-500 mt-0.5">
-                      Desmarcado por defecto — este es un primer acercamiento, no una cotización. Actívalo solo si quieres enviar el mensaje y los links también en un PDF descargable.
+                      Desmarcado por defecto — este es un primer acercamiento, no una cotización. Actívalo solo si quieres enviar también un PDF.
                     </span>
                   </span>
                 </label>
+
+                {approachForm.includePdf && (
+                  <div className="ml-7 bg-black/20 border border-white/10 rounded-xl p-3 space-y-2">
+                    <p className="text-[10px] text-gray-500">
+                      Sube tu propio PDF (por ejemplo, el prototipo o la propuesta comercial ya diseñada). Si no subes ninguno, se generará uno automáticamente con este mensaje y los links. Máximo {(MAX_APPROACH_PDF_BYTES / (1024 * 1024)).toFixed(0)} MB.
+                    </p>
+                    {approachForm.pdfFile ? (
+                      <div className="flex items-center justify-between gap-2 bg-white/5 border border-white/10 rounded-lg px-3 py-2">
+                        <span className="text-xs text-gray-300 truncate">{approachForm.pdfFile.filename}</span>
+                        <button
+                          type="button"
+                          onClick={handleRemoveApproachPdfFile}
+                          aria-label="Quitar PDF subido"
+                          className="p-1 text-gray-500 hover:text-red-400 flex-shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ) : (
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handleApproachPdfFileChange}
+                        className="w-full text-xs text-gray-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-sinflow-secondary file:text-sinflow-primary file:text-xs file:font-semibold file:cursor-pointer cursor-pointer"
+                      />
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 
