@@ -29,8 +29,11 @@ export function Footer() {
                             <p className="mb-4">
                                 Somos <strong>SynFlow IA</strong>, una agencia de soluciones tecnológicas dedicada al desarrollo de aplicaciones web y móviles, enfocada especialmente en el sector PYMES.
                             </p>
-                            <p>
+                            <p className="mb-4">
                                 Nuestro objetivo es democratizar el acceso a la tecnología de punta, permitiendo que negocios en crecimiento puedan optimizar sus operaciones, escalar sus ventas y mejorar la experiencia de sus clientes mediante herramientas digitales personalizadas, Inteligencia Artificial y automatización.
+                            </p>
+                            <p className="text-sm opacity-70">
+                                SynFlow IA S.A.S. — NIT 902.130.990-6, registrada ante la DIAN (Colombia).
                             </p>
                         </>
                     )
@@ -193,6 +196,7 @@ export function Footer() {
                 <div className="mt-12 pt-8 border-t border-gray-800 text-center md:text-left flex flex-col md:flex-row justify-between items-center text-sm">
                     <div className="flex flex-col gap-1">
                         <p>&copy; {new Date().getFullYear()} SynFlow IA. Todos los derechos reservados.</p>
+                        <p className="text-xs opacity-60">SynFlow IA S.A.S. — NIT 902.130.990-6</p>
                     </div>
                     <div className="mt-4 md:mt-0 flex flex-col md:flex-row gap-4 md:space-x-6 text-center md:text-right">
                         <button onClick={openModal('privacy')} className="hover:text-white transition-colors">Política de Tratamiento de Datos</button>
