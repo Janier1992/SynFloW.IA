@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import QRCode from "react-qr-code";
-import { ExternalLink, Zap, Activity, Store, ShoppingBag } from "lucide-react";
+import { ExternalLink, Zap, Activity, CalendarCheck, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 
 const portfolioItems = [
@@ -17,14 +17,14 @@ const portfolioItems = [
         color: "from-orange-500 to-rose-600"
     },
     {
-        title: "Negocio SaaS",
-        description: "Plataforma de gestión para PyMES y tiendas de barrio. Control de ventas, inventario y clientes.",
-        type: "SaaS Platform",
-        stack: ["React", "SaaS", "Web"],
+        title: "Reservas IA",
+        description: "Sistema inteligente de reservas con IA para negocios de servicios. Agenda, confirma y gestiona citas en tiempo real.",
+        type: "AI Booking Platform",
+        stack: ["Next.js", "IA", "Vercel"],
         status: "LIVE",
-        url: "https://janier1992.github.io/Negocio_SaaS/auth",
-        icon: Store,
-        color: "from-blue-500 to-cyan-600"
+        url: "https://reservas-ia-app.vercel.app/",
+        icon: CalendarCheck,
+        color: "from-violet-500 to-fuchsia-600"
     },
     {
         title: "AmiOriente",
