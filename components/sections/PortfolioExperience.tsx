@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import QRCode from "react-qr-code";
-import { ExternalLink, Zap, Activity, CalendarCheck, ShoppingBag } from "lucide-react";
+import { ExternalLink, Zap, Activity, CalendarCheck, Store } from "lucide-react";
 import Link from "next/link";
 
 const portfolioItems = [
@@ -27,13 +27,13 @@ const portfolioItems = [
         color: "from-violet-500 to-fuchsia-600"
     },
     {
-        title: "AmiOriente",
-        description: "Plataforma integral de comercio y servicios (PWA). App nativa instalable con soporte offline para el Oriente Antioqueño.",
-        type: "PWA E-commerce",
-        stack: ["PWA", "React", "Vercel"],
+        title: "App Barrio",
+        description: "Plataforma de registro y directorio de negocios locales. La gente se registra y encuentra los productos y servicios de la empresa.",
+        type: "Registration Platform",
+        stack: ["Next.js", "Web", "Vercel"],
         status: "LIVE",
-        url: "https://ami-oriente-app.vercel.app/",
-        icon: ShoppingBag,
+        url: "https://app-barrio.vercel.app/",
+        icon: Store,
         color: "from-emerald-500 to-teal-600"
     }
 ];
